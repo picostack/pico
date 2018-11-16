@@ -4,6 +4,9 @@ import (
 	"github.com/Southclaws/gitwatch"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/Southclaws/wadsworth/service/config"
+	"github.com/Southclaws/wadsworth/service/task"
 )
 
 // reconfigure will close the configuration watcher and target watcher (unless
@@ -31,14 +34,52 @@ func (app *App) reconfigure() (err error) {
 		return errors.Wrap(err, "failed to watch config target")
 	}
 	go app.configWatcher.Run() //nolint:errcheck - no worthwhile errors returned
-	zap.L().Debug("created new watcher, awaiting initial event")
+	zap.L().Debug("created new config watcher, awaiting setup")
 
 	<-app.configWatcher.InitialDone
-	zap.L().Debug("initial event received")
+	zap.L().Debug("config initial setup done")
 
-	// read config from repo
-	// recreate targets gitwatch
-	// diff?
+	path, err := gitwatch.GetRepoPath(app.config.Directory, app.config.Target)
+	if err != nil {
+		return
+	}
+
+	// TODO: if this fails, log an error and fall back to the old state
+	state, err := config.ConfigFromDirectory(path)
+	if err != nil {
+		return errors.Wrap(err, "failed to construct config from repo")
+	}
+	zap.L().Debug("constructed desired state", zap.Int("targets", len(state.Targets)))
+
+	if app.targetsWatcher != nil {
+		app.targetsWatcher.Close()
+	}
+
+	// TODO: diff what changed, run the `down` command for those that were removed
+
+	app.targets = make(map[string]task.Target)
+	targets := make([]string, len(state.Targets))
+	for i, t := range state.Targets {
+		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
+		targets[i] = t.RepoURL
+		app.targets[t.RepoURL] = t
+	}
+
+	app.targetsWatcher, err = gitwatch.New(
+		app.ctx,
+		targets,
+		app.config.CheckInterval,
+		app.config.Directory,
+		nil,
+		true)
+	if err != nil {
+		return errors.Wrap(err, "failed to watch targets")
+	}
+	go app.targetsWatcher.Run() //nolint:errcheck - no worthwhile errors returned
+	zap.L().Debug("created targets watcher, awaiting setup")
+
+	<-app.targetsWatcher.InitialDone
+	zap.L().Debug("targets initial setup done")
 
 	return
 }

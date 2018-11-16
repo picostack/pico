@@ -90,6 +90,8 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 				signal.Notify(s, os.Interrupt)
 
 				select {
+				case <-ctx.Done():
+					err = ctx.Err()
 				case sig := <-s:
 					err = errors.New(sig.String())
 				case err = <-errs:

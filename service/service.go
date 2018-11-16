@@ -6,13 +6,15 @@ import (
 
 	"github.com/Southclaws/gitwatch"
 	"go.uber.org/zap"
+
+	"github.com/Southclaws/wadsworth/service/task"
 )
 
 // App stores application state
 type App struct {
 	config         Config
 	configWatcher  *gitwatch.Session
-	targets        []string
+	targets        map[string]task.Target
 	targetsWatcher *gitwatch.Session
 	ctx            context.Context
 	cancel         context.CancelFunc
@@ -25,11 +27,11 @@ type Config struct {
 }
 
 // Initialise prepares an instance of the app to run
-func Initialise(ctx context.Context, config Config) (app *App, err error) {
+func Initialise(ctx context.Context, c Config) (app *App, err error) {
 	app = new(App)
 
 	app.ctx, app.cancel = context.WithCancel(ctx)
-	app.config = config
+	app.config = c
 
 	err = app.reconfigure()
 	if err != nil {
@@ -45,6 +47,9 @@ func (app *App) Start() (final error) {
 		select {
 		case <-app.configWatcher.Events:
 			err = app.reconfigure()
+
+		case e := <-app.targetsWatcher.Events:
+			err = app.handle(e)
 		}
 		return
 	}
