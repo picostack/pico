@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"testing"
 
 	"github.com/robertkrimen/otto"
@@ -20,7 +21,7 @@ func Test_applyFileTargets(t *testing.T) {
 			name: "name",
 			url:  "../test.local",
 			up:   ["echo", "hello world"]
-		})`, Targets{
+		})`, task.Targets{
 			{
 				Name:    "name",
 				RepoURL: "../test.local",
@@ -35,7 +36,7 @@ func Test_applyFileTargets(t *testing.T) {
 		T({name: "3", url: url + "project3", up: ["sleep"]});
 
 		console.log("done!");
-		`, Targets{
+		`, task.Targets{
 			{Name: "1", RepoURL: "https://github.com/Southclaws/project1", Up: []string{"sleep"}},
 			{Name: "2", RepoURL: "https://github.com/Southclaws/project2", Up: []string{"sleep"}},
 			{Name: "3", RepoURL: "https://github.com/Southclaws/project3", Up: []string{"sleep"}},
@@ -48,13 +49,15 @@ func Test_applyFileTargets(t *testing.T) {
 		T({name: "3", url: url + "project3", up: ["sleep"], env: {PASSWORD: "nope"}});
 
 		console.log("done!");
-		`, Targets{
+		`, task.Targets{
 			{Name: "1", RepoURL: "https://github.com/Southclaws/project1", Up: []string{"sleep"}, Env: map[string]string{"PASSWORD": "nope"}},
 			{Name: "2", RepoURL: "https://github.com/Southclaws/project2", Up: []string{"sleep"}, Env: map[string]string{"PASSWORD": "nope"}},
 			{Name: "3", RepoURL: "https://github.com/Southclaws/project3", Up: []string{"sleep"}, Env: map[string]string{"PASSWORD": "nope"}},
 		}, false},
-		{"badtype", `T({name: "name", url: "../test.local", up: 1.23})`, Targets{{}}, true},
-		{"missingkey", `T({name: "name", url: "../test.local"})`, Targets{{}}, true},
+		{"badtype", `T({name: "name", url: "../test.local", up: 1.23})`, task.Targets{{}}, true},
+		{"missingkey", `T({name: "name", url: "../test.local"})`, task.Targets{{}}, true},
+		{"env", `console.log(ENV["TEST_ENV_KEY"])`, task.Targets{}, false},
+		{"hostname", `console.log(HOSTNAME)`, task.Targets{}, false},
 	}
 
 	for _, tt := range tests {
@@ -64,6 +67,8 @@ func Test_applyFileTargets(t *testing.T) {
 				state:   new(State),
 				scripts: []string{tt.script},
 			}
+
+			os.Setenv("TEST_ENV_KEY", "an environment variable inside the JS vm")
 
 			err := cb.construct()
 			if tt.wantErr {

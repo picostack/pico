@@ -3,7 +3,9 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
@@ -78,6 +80,19 @@ function T(t) {
 }
 `)
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		return errors.Wrap(err, "failed to get hostname")
+	}
+	cb.vm.Set("HOSTNAME", hostname) //nolint:errcheck
+
+	var env = make(map[string]string)
+	for _, kv := range os.Environ() {
+		d := strings.IndexRune(kv, '=')
+		env[kv[:d]] = kv[d+1:]
+	}
+	cb.vm.Set("ENV", env) //nolint:errcheck
+
 	for _, s := range cb.scripts {
 		err = cb.applyFileTargets(s)
 		if err != nil {
@@ -85,15 +100,15 @@ function T(t) {
 		}
 	}
 
-	stateJsonObj, err := cb.vm.Run(`JSON.stringify(STATE)`)
+	stateObj, err := cb.vm.Run(`JSON.stringify(STATE)`)
 	if err != nil {
 		return errors.Wrap(err, "failed to stringify STATE object")
 	}
-	stateJson, err := stateJsonObj.ToString()
+	stateRaw, err := stateObj.ToString()
 	if err != nil {
 		return errors.Wrap(err, "failed to get string representation of STATE")
 	}
-	err = json.Unmarshal([]byte(stateJson), cb.state)
+	err = json.Unmarshal([]byte(stateRaw), cb.state)
 
 	return
 }
