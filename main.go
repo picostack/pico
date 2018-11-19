@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -62,6 +63,8 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "directory", EnvVar: "DIRECTORY", Value: "./cache/"},
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 5},
+				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR", Value: "http://127.0.0.1:8200"},
+				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
 			},
 			Action: func(c *cli.Context) (err error) {
 				if !c.Args().Present() {
@@ -76,6 +79,8 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 					Target:        c.Args().First(),
 					Directory:     c.String("directory"),
 					CheckInterval: c.Duration("check-interval"),
+					VaultAddress:  c.String("vault-addr"),
+					VaultToken:    c.String("vault-token"),
 				})
 				if err != nil {
 					return errors.Wrap(err, "failed to initialise")
