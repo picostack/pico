@@ -39,11 +39,6 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 	app.ctx, app.cancel = context.WithCancel(ctx)
 	app.config = c
 
-	err = app.reconfigure()
-	if err != nil {
-		return
-	}
-
 	vaultConfig := &api.Config{
 		Address:    c.VaultAddress,
 		HttpClient: cleanhttp.DefaultClient(),
@@ -54,15 +49,15 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 	}
 	app.vault.SetToken(c.VaultToken)
 
-	s, err := app.vault.Logical().List("/secret/metadata")
+	_, err = app.vault.Logical().List("/secret/metadata")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to ping secrets metadata endpoint")
 	}
-	if s == nil {
-		return nil, errors.Wrap(err, "vault read of /secret/metadata returned nil response")
+
+	err = app.reconfigure()
+	if err != nil {
+		return
 	}
-	zap.L().Debug("successfully tested vault access",
-		zap.Int("items", len(s.Data["keys"].([]interface{}))))
 
 	return
 }
