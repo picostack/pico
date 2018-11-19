@@ -81,5 +81,17 @@ func (app *App) reconfigure() (err error) {
 	<-app.targetsWatcher.InitialDone
 	zap.L().Debug("targets initial setup done")
 
+	for _, t := range state.Targets {
+		p, err := gitwatch.GetRepoPath(app.config.Directory, t.RepoURL)
+		if err != nil {
+			return errors.Wrap(err, "failed to get target repo path")
+		}
+		err = app.executeWithSecrets(t, p)
+		if err != nil {
+			return errors.Wrap(err, "failed to execute task after reconfigure")
+		}
+	}
+	zap.L().Debug("targets initial up done")
+
 	return
 }
