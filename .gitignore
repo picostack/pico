@@ -16,6 +16,7 @@
 
 # Local repos for tests
 *.local
+.env
 
 # The binary
 wadsworth
