@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
 	"github.com/Southclaws/wadsworth/service/task"
 )
@@ -19,6 +21,7 @@ type App struct {
 	configWatcher  *gitwatch.Session
 	targets        map[string]task.Target
 	targetsWatcher *gitwatch.Session
+	ssh            transport.AuthMethod
 	vault          *api.Client
 	ctx            context.Context
 	cancel         context.CancelFunc
@@ -38,6 +41,11 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 
 	app.ctx, app.cancel = context.WithCancel(ctx)
 	app.config = c
+
+	app.ssh, err = ssh.NewSSHAgentAuth("git")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to set up SSH authentication")
+	}
 
 	vaultConfig := &api.Config{
 		Address:    c.VaultAddress,

@@ -89,6 +89,7 @@ require (
 	gopkg.in/ldap.v2 v2.5.1 // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
+	gopkg.in/src-d/go-git.v4 v4.6.0
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.1 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
