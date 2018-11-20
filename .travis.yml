@@ -1,0 +1,28 @@
+language: go
+go:
+  - "1.11"
+
+install:
+  - sudo apt-get --yes install snapd
+  - sudo snap install snapcraft --classic
+  - go get github.com/hashicorp/vault
+env:
+  - GO111MODULE=on PATH=/snap/bin:$PATH DEBUG=1
+
+script:
+  - go test -v -race ./service
+
+after_success:
+  - |
+    if [ -n "$TRAVIS_TAG" ];
+      then
+      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      make build push;
+    fi
+
+deploy:
+  - provider: script
+    skip_cleanup: true
+    script: curl -sL https://git.io/goreleaser | bash
+    on:
+      tags: true

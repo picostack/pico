@@ -1,0 +1,51 @@
+project_name: wadsworth
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm
+      - arm64
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+dockers:
+  - image: southclaws/wadsworth
+    tag_templates:
+      - "{{ .Tag }}"
+      - "v{{ .Major }}"
+      - "v{{ .Major }}.{{ .Minor }}"
+      - latest
+    dockerfile: Dockerfile.release
+nfpm:
+  vendor: Southclaws
+  homepage: https://github.com/Southclaws/wadsworth
+  maintainer: Southclaws <hello@southcla.ws>
+  description: |
+    A docker-compose application manager that deploys and maintains a set of
+    compose projects and provides secret management for them via Vault.
+  license: GPLv3
+  formats:
+    - deb
+    - rpm
+snapcraft:
+  summary: An automatic docker-compose+HashiCorp Vault deployment tool.
+  description: |
+    A docker-compose application manager that deploys and maintains a set of
+    compose projects and provides secret management for them via Vault.
+  grade: devel
+  apps:
+    wadsworth:
+      plugs: ["docker-support"]
+      daemon: simple

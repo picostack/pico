@@ -1,0 +1,3 @@
+FROM scratch
+COPY wadsworth /bin/wadsworth
+ENTRYPOINT ["wadsworth"]
