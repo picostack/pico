@@ -28,7 +28,7 @@ func (app *App) reconfigure() (err error) {
 		[]string{app.config.Target},
 		app.config.CheckInterval,
 		app.config.Directory,
-		nil,
+		app.ssh,
 		true)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch config target")
@@ -70,7 +70,7 @@ func (app *App) reconfigure() (err error) {
 		targets,
 		app.config.CheckInterval,
 		app.config.Directory,
-		nil,
+		app.ssh,
 		true)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch targets")

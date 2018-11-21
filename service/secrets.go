@@ -5,7 +5,7 @@ import (
 )
 
 func (app *App) getSecretsForTarget(name string) (env map[string]string, err error) {
-	path := "/secret/data/" + name
+	path := "/secret/" + name
 	secret, err := app.vault.Logical().Read(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read secret")
