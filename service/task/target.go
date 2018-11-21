@@ -1,7 +1,6 @@
 package task
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -53,8 +52,6 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 	if len(command) == 0 {
 		return
 	}
-
-	outBuf := bytes.NewBuffer(nil)
 
 	cmd := exec.Command(command[0])
 	if len(command) > 1 {
