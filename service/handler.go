@@ -22,15 +22,16 @@ func (app *App) handle(e gitwatch.Event) (err error) {
 }
 
 func (app *App) executeWithSecrets(target task.Target, path string) (err error) {
-	zap.L().Debug("executing target",
-		zap.String("target", target.Name),
-		zap.String("url", target.RepoURL),
-		zap.String("dir", path))
-
 	env, err := app.getSecretsForTarget(target.Name)
 	if err != nil {
 		return errors.Wrap(err, "failed to get secrets for target")
 	}
+
+	zap.L().Debug("executing target with available secrets",
+		zap.String("target", target.Name),
+		zap.String("url", target.RepoURL),
+		zap.String("dir", path),
+		zap.Int("secrets", len(env)))
 
 	return target.Execute(path, env, false)
 }
