@@ -61,6 +61,7 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 
+	cmd.Env = os.Environ()
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
