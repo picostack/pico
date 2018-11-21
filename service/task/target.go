@@ -3,9 +3,8 @@ package task
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
-
-	"github.com/pkg/errors"
 )
 
 // Targets is just a list of target objects, to implement the Sort interface
@@ -62,8 +61,8 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 		cmd.Args = append(cmd.Args, command[1:]...)
 	}
 	cmd.Dir = dir
-	cmd.Stdout = outBuf
-	cmd.Stderr = outBuf
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
 
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
@@ -71,7 +70,7 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 
 	err = cmd.Run()
 	if err != nil {
-		return errors.Wrap(err, outBuf.String())
+		return err
 	}
 
 	return
