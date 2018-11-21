@@ -14,17 +14,8 @@ func (app *App) getSecretsForTarget(name string) (env map[string]string, err err
 		return
 	}
 
-	data, ok := secret.Data["data"]
-	if !ok {
-		return nil, errors.New("data field missing from secret payload")
-	}
-	dataAsMap, ok := data.(map[string]interface{})
-	if !ok {
-		return nil, errors.New("failed to cast data payload to map[string]interface{}")
-	}
-
 	env = make(map[string]string)
-	for k, v := range dataAsMap {
+	for k, v := range secret.Data {
 		env[k] = v.(string)
 	}
 	return
