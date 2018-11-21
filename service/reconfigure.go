@@ -84,11 +84,15 @@ func (app *App) reconfigure() (err error) {
 	for _, t := range state.Targets {
 		p, err := gitwatch.GetRepoPath(app.config.Directory, t.RepoURL)
 		if err != nil {
-			return errors.Wrap(err, "failed to get target repo path")
+			zap.L().Error("failed to get target repo path",
+				zap.Error(errors.Cause(err)))
+			continue
 		}
 		err = app.executeWithSecrets(t, p)
 		if err != nil {
-			return errors.Wrap(err, "failed to execute task after reconfigure")
+			zap.L().Error("failed to execute task after reconfigure",
+				zap.Error(errors.Cause(err)))
+			continue
 		}
 	}
 	zap.L().Debug("targets initial up done")
