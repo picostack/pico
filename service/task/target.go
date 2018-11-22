@@ -34,6 +34,9 @@ type Target struct {
 // Execute runs the target's command in the specified directory with the
 // specified environment variables
 func (t *Target) Execute(dir string, env map[string]string, shutdown bool) (err error) {
+	if env == nil {
+		env = make(map[string]string)
+	}
 	for k, v := range t.Env {
 		env[k] = v
 	}
