@@ -54,6 +54,17 @@ func Test_applyFileTargets(t *testing.T) {
 			{Name: "2", RepoURL: "https://github.com/Southclaws/project2", Up: []string{"sleep"}, Env: map[string]string{"PASSWORD": "nope"}},
 			{Name: "3", RepoURL: "https://github.com/Southclaws/project3", Up: []string{"sleep"}, Env: map[string]string{"PASSWORD": "nope"}},
 		}, false},
+		{"envglobal", `
+		E("GLOBAL", "readme");
+		T({
+			name: "name",
+			url:  "../test.local",
+			up:   ["sleep"],
+			env:  {LOCAL: "hi"}
+		})
+		`, task.Targets{
+			{Name: "name", RepoURL: "../test.local", Up: []string{"sleep"}, Env: map[string]string{"GLOBAL": "readme", "LOCAL": "hi"}},
+		}, false},
 		{"badtype", `T({name: "name", url: "../test.local", up: 1.23})`, task.Targets{{}}, true},
 		{"missingkey", `T({name: "name", url: "../test.local"})`, task.Targets{{}}, true},
 		{"env", `console.log(ENV["TEST_ENV_KEY"])`, task.Targets{}, false},

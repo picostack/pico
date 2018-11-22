@@ -116,11 +116,11 @@ function E(k, v) {
 	}
 	err = json.Unmarshal([]byte(stateRaw), cb.state)
 
-	for _, t := range cb.state.Targets {
-		tmpEnv := t.Env
-		t.Env = cb.state.Env
+	for i := range cb.state.Targets {
+		tmpEnv := cb.state.Targets[i].Env
+		cb.state.Targets[i].Env = cb.state.Env
 		for k, v := range tmpEnv {
-			t.Env[k] = v
+			cb.state.Targets[i].Env[k] = v
 		}
 	}
 
