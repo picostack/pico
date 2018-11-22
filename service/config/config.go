@@ -15,7 +15,8 @@ import (
 
 // State represents a desired system state
 type State struct {
-	Targets task.Targets `json:"targets"`
+	Targets task.Targets      `json:"targets"`
+	Env     map[string]string `json:"env"`
 }
 
 // ConfigFromDirectory searches a directory for configuration files and
@@ -64,7 +65,8 @@ func (cb *configBuilder) construct() (err error) {
 	//nolint:errcheck
 	cb.vm.Run(`'use strict';
 var STATE = {
-	targets: []
+	targets: [],
+	env: {}
 };
 
 function T(t) {
@@ -77,6 +79,10 @@ function T(t) {
 	// if(t.shutdown_command) { }
 
 	STATE.targets.push(t)
+}
+
+function E(k, v) {
+	STATE.env[k] = v
 }
 `)
 
@@ -109,6 +115,14 @@ function T(t) {
 		return errors.Wrap(err, "failed to get string representation of STATE")
 	}
 	err = json.Unmarshal([]byte(stateRaw), cb.state)
+
+	for _, t := range cb.state.Targets {
+		tmpEnv := t.Env
+		t.Env = cb.state.Env
+		for k, v := range tmpEnv {
+			t.Env[k] = v
+		}
+	}
 
 	return
 }
