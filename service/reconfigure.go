@@ -1,6 +1,8 @@
 package service
 
 import (
+	"reflect"
+
 	"github.com/Southclaws/gitwatch"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -18,6 +20,42 @@ import (
 // rest of the service to prevent a reconfiguration during an event handler.
 func (app *App) reconfigure() (err error) {
 	zap.L().Debug("reconfiguring")
+
+	err = app.watchConfig()
+	if err != nil {
+		return
+	}
+
+	// generate a new desired state from the config repo
+	path, err := gitwatch.GetRepoPath(app.config.Directory, app.config.Target)
+	if err != nil {
+		return
+	}
+	state := getNewState(path, app.state)
+
+	// diff targets
+	additions, removals := diffTargets(app.targets, state.Targets)
+	app.targets = state.Targets
+
+	err = app.watchTargets()
+	if err != nil {
+		return
+	}
+
+	// out with the old, in with the new!
+	app.executeTargets(removals, true)
+	app.executeTargets(additions, false)
+
+	zap.L().Debug("targets initial up done")
+
+	app.state = state
+
+	return
+}
+
+// watchConfig creates or restarts the watcher that reacts to changes to the
+// repo that contains wadsworth configuration scripts
+func (app *App) watchConfig() (err error) {
 	if app.configWatcher != nil {
 		zap.L().Debug("closing existing watcher")
 		app.configWatcher.Close()
@@ -39,35 +77,24 @@ func (app *App) reconfigure() (err error) {
 	<-app.configWatcher.InitialDone
 	zap.L().Debug("config initial setup done")
 
-	path, err := gitwatch.GetRepoPath(app.config.Directory, app.config.Target)
-	if err != nil {
-		return
-	}
+	return
+}
 
-	// TODO: if this fails, log an error and fall back to the old state
-	state, err := config.ConfigFromDirectory(path)
-	if err != nil {
-		return errors.Wrap(err, "failed to construct config from repo")
+// watchTargets creates or restarts the watcher that reacts to changes to target
+// repositories that contain actual apps and services
+func (app *App) watchTargets() (err error) {
+	targetURLs := make([]string, len(app.targets))
+	for _, t := range app.targets {
+		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
+		targetURLs = append(targetURLs, t.RepoURL)
 	}
-	zap.L().Debug("constructed desired state", zap.Int("targets", len(state.Targets)))
 
 	if app.targetsWatcher != nil {
 		app.targetsWatcher.Close()
 	}
-
-	// TODO: diff what changed, run the `down` command for those that were removed
-
-	app.targets = make(map[string]task.Target)
-	targets := make([]string, len(state.Targets))
-	for i, t := range state.Targets {
-		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
-		targets[i] = t.RepoURL
-		app.targets[t.RepoURL] = t
-	}
-
 	app.targetsWatcher, err = gitwatch.New(
 		app.ctx,
-		targets,
+		targetURLs,
 		app.config.CheckInterval,
 		app.config.Directory,
 		app.ssh,
@@ -81,21 +108,54 @@ func (app *App) reconfigure() (err error) {
 	<-app.targetsWatcher.InitialDone
 	zap.L().Debug("targets initial setup done")
 
-	for _, t := range state.Targets {
-		p, err := gitwatch.GetRepoPath(app.config.Directory, t.RepoURL)
-		if err != nil {
-			zap.L().Error("failed to get target repo path",
-				zap.Error(errors.Cause(err)))
-			continue
+	return
+}
+
+// getNewState attempts to obtain a new desired state from the given path, if
+// any failures occur, it simply returns a fallback state and logs an error
+func getNewState(path string, fallback config.State) (state config.State) {
+	state, err := config.ConfigFromDirectory(path)
+	if err != nil {
+		zap.L().Error("failed to construct config from repo, falling back to original state",
+			zap.Error(err))
+
+		state = fallback
+	} else {
+		zap.L().Debug("constructed desired state",
+			zap.Int("targets", len(state.Targets)))
+	}
+	return
+}
+
+// diffTargets returns just the additions (also changes) and removals between
+// the specified old targets and new targets
+func diffTargets(oldTargets, newTargets []task.Target) (additions, removals []task.Target) {
+	for _, newTarget := range newTargets {
+		var exists bool
+		for _, oldTarget := range oldTargets {
+			if oldTarget.Name == newTarget.Name {
+				exists = true
+				break
+			}
 		}
-		err = app.executeWithSecrets(t, p)
-		if err != nil {
-			zap.L().Error("failed to execute task after reconfigure",
-				zap.Error(errors.Cause(err)))
-			continue
+		if !exists {
+			removals = append(removals, newTarget)
 		}
 	}
-	zap.L().Debug("targets initial up done")
-
+	for _, oldTarget := range oldTargets {
+		var exists bool
+		var newTarget task.Target
+		for _, newTarget = range newTargets {
+			if newTarget.Name == oldTarget.Name {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			additions = append(additions, oldTarget)
+		} else if !reflect.DeepEqual(oldTarget, newTarget) {
+			additions = append(additions, oldTarget)
+		}
+	}
 	return
 }

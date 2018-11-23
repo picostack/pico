@@ -12,6 +12,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
+	"github.com/Southclaws/wadsworth/service/config"
 	"github.com/Southclaws/wadsworth/service/task"
 )
 
@@ -19,10 +20,11 @@ import (
 type App struct {
 	config         Config
 	configWatcher  *gitwatch.Session
-	targets        map[string]task.Target
+	targets        []task.Target
 	targetsWatcher *gitwatch.Session
 	ssh            transport.AuthMethod
 	vault          *api.Client
+	state          config.State
 	ctx            context.Context
 	cancel         context.CancelFunc
 }
