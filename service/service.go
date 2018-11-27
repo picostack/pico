@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/Southclaws/gitwatch"
@@ -79,8 +80,17 @@ func (app *App) Start() (final error) {
 		case <-app.configWatcher.Events:
 			err = app.reconfigure()
 
-		case e := <-app.targetsWatcher.Events:
-			err = app.handle(e)
+		case event := <-app.targetsWatcher.Events:
+			e := app.handle(event)
+			if e != nil {
+				zap.L().Error("failed to handle event",
+					zap.String("url", event.URL),
+					zap.Error(e))
+			}
+
+		case e := <-errorMultiplex(app.configWatcher.Errors, app.targetsWatcher.Errors):
+			zap.L().Error("git error",
+				zap.Error(e))
 		}
 		return
 	}
@@ -94,4 +104,25 @@ func (app *App) Start() (final error) {
 		}
 	}
 	return
+}
+
+func errorMultiplex(chans ...<-chan error) <-chan error {
+	out := make(chan error)
+	go func() {
+		var wg sync.WaitGroup
+		wg.Add(len(chans))
+
+		for _, c := range chans {
+			go func(c <-chan error) {
+				for v := range c {
+					out <- v
+				}
+				wg.Done()
+			}(c)
+		}
+
+		wg.Wait()
+		close(out)
+	}()
+	return out
 }
