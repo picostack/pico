@@ -5,6 +5,13 @@ import (
 )
 
 func (app *App) getSecretsForTarget(name string) (env map[string]string, err error) {
+	if app.vault != nil {
+		return app.secretsFromVault(name)
+	}
+	return
+}
+
+func (app *App) secretsFromVault(name string) (env map[string]string, err error) {
 	path := "/secret/" + name
 	secret, err := app.vault.Logical().Read(path)
 	if err != nil {

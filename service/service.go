@@ -50,19 +50,21 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 		return nil, errors.Wrap(err, "failed to set up SSH authentication")
 	}
 
-	vaultConfig := &api.Config{
-		Address:    c.VaultAddress,
-		HttpClient: cleanhttp.DefaultClient(),
-	}
-	app.vault, err = api.NewClient(vaultConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to connect to vault")
-	}
-	app.vault.SetToken(c.VaultToken)
+	if c.VaultAddress != "" {
+		vaultConfig := &api.Config{
+			Address:    c.VaultAddress,
+			HttpClient: cleanhttp.DefaultClient(),
+		}
+		app.vault, err = api.NewClient(vaultConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to connect to vault")
+		}
+		app.vault.SetToken(c.VaultToken)
 
-	_, err = app.vault.Logical().List("/secret/metadata")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to ping secrets metadata endpoint")
+		_, err = app.vault.Logical().List("/secret/metadata")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to ping secrets metadata endpoint")
+		}
 	}
 
 	err = app.reconfigure()

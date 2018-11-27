@@ -63,7 +63,7 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "directory", EnvVar: "DIRECTORY", Value: "./cache/"},
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 5},
-				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR", Value: "http://127.0.0.1:8200"},
+				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR"},
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
 			},
 			Action: func(c *cli.Context) (err error) {
