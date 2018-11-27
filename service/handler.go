@@ -27,7 +27,7 @@ func (app *App) executeWithSecrets(target task.Target, path string, shutdown boo
 		return errors.Wrap(err, "failed to get secrets for target")
 	}
 
-	zap.L().Debug("executing target with available secrets",
+	zap.L().Debug("executing with secrets",
 		zap.String("target", target.Name),
 		zap.String("url", target.RepoURL),
 		zap.String("dir", path),
