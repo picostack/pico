@@ -83,7 +83,7 @@ func (app *App) watchConfig() (err error) {
 // watchTargets creates or restarts the watcher that reacts to changes to target
 // repositories that contain actual apps and services
 func (app *App) watchTargets() (err error) {
-	targetURLs := make([]string, len(app.targets))
+	var targetURLs []string
 	for _, t := range app.targets {
 		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
 		targetURLs = append(targetURLs, t.RepoURL)
