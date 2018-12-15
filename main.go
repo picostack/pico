@@ -45,9 +45,9 @@ func main() {
 
 	app.Name = "wadsworth"
 	app.Usage = "A git-driven task automation butler."
-	app.UsageText = `TODO: Short usage info`
+	app.UsageText = `wadsworth [flags] [command]`
 	app.Version = version
-	app.Description = `TODO: Longform description`
+	app.Description = `Wadsworth is a git-driven task runner to automate the application of configs.`
 	app.Author = "Southclaws"
 	app.Email = "hello@southcla.ws"
 

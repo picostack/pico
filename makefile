@@ -8,10 +8,6 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION)"
 # Local Development
 #-
 
-static:
-	go get
-	CGO_ENABLED=0 GOOS=linux go build -a $(LDFLAGS) -o $(SERVICE) .
-
 fast:
 	go build $(LDFLAGS) -o $(SERVICE)
 
