@@ -1,6 +1,7 @@
 package task
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -53,7 +54,7 @@ func (t *Target) Execute(dir string, env map[string]string, shutdown bool) (err 
 
 func execute(dir string, env map[string]string, command []string) (err error) {
 	if len(command) == 0 {
-		return
+		return errors.New("attempt to execute target with empty command")
 	}
 
 	cmd := exec.Command(command[0])
