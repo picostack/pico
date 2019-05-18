@@ -29,6 +29,7 @@ func (app *App) executeWithSecrets(target task.Target, path string, shutdown boo
 
 	zap.L().Debug("executing with secrets",
 		zap.String("target", target.Name),
+		zap.Strings("cmd", target.Up),
 		zap.String("url", target.RepoURL),
 		zap.String("dir", path),
 		zap.Int("secrets", len(env)))
