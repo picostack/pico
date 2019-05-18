@@ -16,9 +16,7 @@ import (
 	"github.com/Southclaws/wadsworth/service"
 )
 
-var (
-	version = "master"
-)
+var version = "master"
 
 func init() {
 	// constructs a logger and replaces the default global logger

@@ -1,8 +1,6 @@
 package service
 
-import (
-	"github.com/pkg/errors"
-)
+import "github.com/pkg/errors"
 
 func (app *App) getSecretsForTarget(name string) (env map[string]string, err error) {
 	if app.vault != nil {

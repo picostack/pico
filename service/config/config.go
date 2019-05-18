@@ -92,7 +92,7 @@ function E(k, v) {
 	}
 	cb.vm.Set("HOSTNAME", hostname) //nolint:errcheck
 
-	var env = make(map[string]string)
+	env := make(map[string]string)
 	for _, kv := range os.Environ() {
 		d := strings.IndexRune(kv, '=')
 		env[kv[:d]] = kv[d+1:]
