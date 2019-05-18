@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	"go.uber.org/zap"
 )
 
 // Targets is just a list of target objects, to implement the Sort interface
