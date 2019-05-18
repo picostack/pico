@@ -139,7 +139,7 @@ func diffTargets(oldTargets, newTargets []task.Target) (additions, removals []ta
 			}
 		}
 		if !exists {
-			removals = append(removals, newTarget)
+			additions = append(additions, newTarget)
 		}
 	}
 	for _, oldTarget := range oldTargets {
@@ -152,9 +152,9 @@ func diffTargets(oldTargets, newTargets []task.Target) (additions, removals []ta
 			}
 		}
 		if !exists {
-			additions = append(additions, oldTarget)
+			removals = append(removals, oldTarget)
 		} else if !reflect.DeepEqual(oldTarget, newTarget) {
-			additions = append(additions, oldTarget)
+			additions = append(additions, newTarget)
 		}
 	}
 	return

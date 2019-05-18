@@ -2,16 +2,17 @@ package service
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/Southclaws/wadsworth/service/task"
 )
 
 func Test_diffTargets(t *testing.T) {
 	type args struct {
-		newTargets []task.Target
 		oldTargets []task.Target
+		newTargets []task.Target
 	}
 	tests := []struct {
 		args          args
@@ -33,6 +34,38 @@ func Test_diffTargets(t *testing.T) {
 			},
 			nil,
 			nil,
+		},
+		{
+			args{
+				oldTargets: []task.Target{},
+				newTargets: []task.Target{
+					{Name: "one"},
+					{Name: "two"},
+					{Name: "three"},
+				},
+			},
+			[]task.Target{
+				{Name: "one"},
+				{Name: "two"},
+				{Name: "three"},
+			},
+			nil,
+		},
+		{
+			args{
+				oldTargets: []task.Target{
+					{Name: "one"},
+					{Name: "two"},
+					{Name: "three"},
+				},
+				newTargets: []task.Target{},
+			},
+			nil,
+			[]task.Target{
+				{Name: "one"},
+				{Name: "two"},
+				{Name: "three"},
+			},
 		},
 		{
 			args{
@@ -89,13 +122,9 @@ func Test_diffTargets(t *testing.T) {
 	}
 	for ii, tt := range tests {
 		t.Run(fmt.Sprint(ii), func(t *testing.T) {
-			gotAdditions, gotRemovals := diffTargets(tt.args.newTargets, tt.args.oldTargets)
-			if !reflect.DeepEqual(gotAdditions, tt.wantAdditions) {
-				t.Errorf("diffTargets() gotAdditions = %v, want %v", gotAdditions, tt.wantAdditions)
-			}
-			if !reflect.DeepEqual(gotRemovals, tt.wantRemovals) {
-				t.Errorf("diffTargets() gotRemovals = %v, want %v", gotRemovals, tt.wantRemovals)
-			}
+			gotAdditions, gotRemovals := diffTargets(tt.args.oldTargets, tt.args.newTargets)
+			assert.Equal(t, tt.wantAdditions, gotAdditions, "additions mismatch")
+			assert.Equal(t, tt.wantRemovals, gotRemovals, "removals mismatch")
 		})
 	}
 }
