@@ -47,6 +47,7 @@ func (app App) getTarget(url string) (target task.Target, exists bool) {
 }
 
 func (app App) executeTargets(targets []task.Target, shutdown bool) {
+	zap.L().Debug("executing all targets", zap.Bool("shutdown", shutdown))
 	for _, t := range targets {
 		p, err := gitwatch.GetRepoPath(app.config.Directory, t.RepoURL)
 		if err != nil {
