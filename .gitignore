@@ -20,3 +20,5 @@
 
 # The binary
 wadsworth
+dist
+.env
