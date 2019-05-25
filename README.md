@@ -9,7 +9,7 @@ Wadsworth is a git-driven task runner to automate the application of configs.
 ### Linux
 
 ```sh
-curl -s https://raw.githubusercontent.com/Southclaws/wadsworth/master/godownloader.sh | bash
+curl -s https://raw.githubusercontent.com/Southclaws/wadsworth/master/install.sh | bash
 ```
 
 ### Everything Else
