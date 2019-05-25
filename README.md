@@ -4,6 +4,19 @@ _The [Mister Handy robot][wadsworth] of automation!_
 
 Wadsworth is a git-driven task runner to automate the application of configs.
 
+## Install
+
+### Linux
+
+```sh
+curl -s https://raw.githubusercontent.com/Southclaws/wadsworth/master/godownloader.sh | bash
+```
+
+### Everything Else
+
+It's primarily a server side tool aimed at Linux servers, so there aren't any install scripts for other platforms. Most
+Windows/Mac usage is probably just local testing so just use `go get` for these use-cases.
+
 ## Overview
 
 Wadsworth is a little tool for implementing [Git-Ops][git-ops] in single-server environments. It's not a cloud/cluster
