@@ -130,7 +130,7 @@ to ease the maintenance and user experience:
   words, every repo can contain `.js` config files to build a dependency tree of repos. But I'm not sure if there's a
   use-case for this yet (or ever).
 
-[wadsworth]: https://d1u5p3l4wpay3k.cloudfront.net/fallout_gamepedia/8/8c/Mister_Handy.png
+[wadsworth]: https://i.imgur.com/RCYbkiq.png
 [git-ops]: https://www.weave.works/blog/gitops-operations-by-pull-request
 [kube-applier]: https://github.com/box/kube-applier
 [terraform]: https://terraform.io
