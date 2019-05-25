@@ -2,13 +2,6 @@ language: go
 go:
   - "1.12"
 
-install:
-  - sudo apt-get --yes install snapd
-  - sudo snap install snapcraft --classic
-  - go get github.com/hashicorp/vault
-env:
-  - GO111MODULE=on PATH=/snap/bin:$PATH DEBUG=1
-
 script:
   - go test -v -race ./service
 
