@@ -36,6 +36,7 @@ type Config struct {
 	CheckInterval time.Duration
 	VaultAddress  string
 	VaultToken    string
+	VaultPath     string
 }
 
 // Initialise prepares an instance of the app to run

@@ -63,6 +63,7 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 10},
 				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR"},
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
+				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH"},
 			},
 			Action: func(c *cli.Context) (err error) {
 				if !c.Args().Present() {
@@ -79,6 +80,7 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 					CheckInterval: c.Duration("check-interval"),
 					VaultAddress:  c.String("vault-addr"),
 					VaultToken:    c.String("vault-token"),
+					VaultPath:     c.String("vault-path"),
 				})
 				if err != nil {
 					return errors.Wrap(err, "failed to initialise")
