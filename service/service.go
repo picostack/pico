@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -62,7 +63,7 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 		}
 		app.vault.SetToken(c.VaultToken)
 
-		_, err = app.vault.Logical().List("/secret/metadata")
+		_, err = app.vault.Logical().List(filepath.Join("/secret", c.VaultPath, "metadata"))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to ping secrets metadata endpoint")
 		}
