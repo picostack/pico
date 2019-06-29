@@ -22,9 +22,9 @@ changelog:
       - "^test:"
 dockers:
   - image_templates:
-      - southclaws/wadsworth:"{{ .Tag }}"
-      - southclaws/wadsworth:"v{{ .Major }}"
-      - southclaws/wadsworth:"v{{ .Major }}.{{ .Minor }}"
+      - southclaws/wadsworth:{{ .Tag }}
+      - southclaws/wadsworth:v{{ .Major }}
+      - southclaws/wadsworth:v{{ .Major }}.{{ .Minor }}
       - southclaws/wadsworth:latest
     dockerfile: Dockerfile.release
 nfpms:
