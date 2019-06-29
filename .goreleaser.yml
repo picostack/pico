@@ -21,21 +21,20 @@ changelog:
       - "^docs:"
       - "^test:"
 dockers:
-  - image: southclaws/wadsworth
-    tag_templates:
-      - "{{ .Tag }}"
-      - "v{{ .Major }}"
-      - "v{{ .Major }}.{{ .Minor }}"
-      - latest
+  - image_templates:
+      - southclaws/wadsworth:"{{ .Tag }}"
+      - southclaws/wadsworth:"v{{ .Major }}"
+      - southclaws/wadsworth:"v{{ .Major }}.{{ .Minor }}"
+      - southclaws/wadsworth:latest
     dockerfile: Dockerfile.release
-nfpm:
-  vendor: Southclaws
-  homepage: https://github.com/Southclaws/wadsworth
-  maintainer: Southclaws <hello@southcla.ws>
-  description: |
-    A docker-compose application manager that deploys and maintains a set of
-    compose projects and provides secret management for them via Vault.
-  license: GPLv3
-  formats:
-    - deb
-    - rpm
+nfpms:
+  - vendor: Southclaws
+    homepage: https://github.com/Southclaws/wadsworth
+    maintainer: Southclaws <hello@southcla.ws>
+    description: |
+      A docker-compose application manager that deploys and maintains a set of
+      compose projects and provides secret management for them via Vault.
+    license: GPLv3
+    formats:
+      - deb
+      - rpm
