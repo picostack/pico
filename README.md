@@ -116,20 +116,6 @@ This would pass the environment variable `MOUNT_POINT=/data` to the `docker-comp
 have a bunch of compose configs that all mount data to some path on the machine, you then use
 `${MOUNT_POINT}/postgres:/var/lib/postgres/data` as a volume declaration in your `docker-compose.yml`.
 
-## Roadmap
-
-The current implementation is an MVP that does one thing well, but there some features I'd like to implement in future
-to ease the maintenance and user experience:
-
-- Daemon control - currently, `wadsworth run` will just run and block until it is killed, I would like to provide a way
-  to interact with a running instance of `wadsworth` via a Unix socket file and a simple API (similar to Docker). This
-  would open up the ability to perform forced triggers of targets or disable certain targets via the command line.
-- Proper releases - Right now you grab the binary and run it, how you daemonise it is up to you. I'd like to provide a
-  systemd unit file and a Snapcraft app for easier installation and usage.
-- Dependency Tree - this is a maybe but it could be useful if all repos are both config repos and target repos. In other
-  words, every repo can contain `.js` config files to build a dependency tree of repos. But I'm not sure if there's a
-  use-case for this yet (or ever).
-
 [wadsworth]: https://i.imgur.com/RCYbkiq.png
 [git-ops]: https://www.weave.works/blog/gitops-operations-by-pull-request
 [kube-applier]: https://github.com/box/kube-applier
