@@ -37,4 +37,4 @@ nfpms:
     license: GPLv3
     formats:
       - deb
-      - rpm
+      # - rpm
