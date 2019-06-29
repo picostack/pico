@@ -9,7 +9,7 @@ require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/SAP/go-hdb v0.13.1 // indirect
 	github.com/SermoDigital/jose v0.9.1 // indirect
-	github.com/Southclaws/gitwatch v1.0.3
+	github.com/Southclaws/gitwatch v1.1.0
 	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
