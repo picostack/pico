@@ -12,7 +12,7 @@ deploy:
   - provider: script
     skip_cleanup: true
     script: >-
-      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin && curl -sL
+      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin && git checkout -- . && curl -sL
       https://git.io/goreleaser | bash
     on:
       tags: true
