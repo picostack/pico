@@ -8,17 +8,11 @@ env:
 script:
   - go test -v -race ./service
 
-after_success:
-  - |
-    if [ -n "$TRAVIS_TAG" ];
-      then
-      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      make build push;
-    fi
-
 deploy:
   - provider: script
     skip_cleanup: true
-    script: curl -sL https://git.io/goreleaser | bash
+    script: |
+      echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin &&
+      curl -sL https://git.io/goreleaser | bash
     on:
       tags: true
