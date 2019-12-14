@@ -79,6 +79,10 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 
 // Start launches the app and blocks until fatal error
 func (app *App) Start() (final error) {
+	// Renew vault token daily
+	renew := time.NewTicker(time.Hour * 24)
+	defer renew.Stop()
+
 	f := func() (err error) {
 		select {
 		case <-app.configWatcher.Events:
@@ -95,6 +99,13 @@ func (app *App) Start() (final error) {
 		case e := <-errorMultiplex(app.configWatcher.Errors, app.targetsWatcher.Errors):
 			zap.L().Error("git error",
 				zap.Error(e))
+
+		case <-renew.C:
+			_, e := app.vault.Auth().Token().RenewSelf(86400)
+			if e != nil {
+				zap.L().Error("failed to renew vault token",
+					zap.Error(e))
+			}
 		}
 		return
 	}
