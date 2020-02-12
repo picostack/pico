@@ -60,6 +60,7 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 			ArgsUsage: "target",
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "directory", EnvVar: "DIRECTORY", Value: "./cache/"},
+				cli.BoolFlag{Name: "no-ssh", EnvVar: "NO_SSH"},
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 10},
 				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR"},
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
@@ -76,6 +77,7 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 
 				svc, err := service.Initialise(ctx, service.Config{
 					Target:        c.Args().First(),
+					NoSSH:         c.Bool("no-ssh"),
 					Directory:     c.String("directory"),
 					CheckInterval: c.Duration("check-interval"),
 					VaultAddress:  c.String("vault-addr"),

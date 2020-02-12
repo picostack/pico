@@ -33,6 +33,7 @@ type App struct {
 
 type Config struct {
 	Target        string
+	NoSSH         bool
 	Directory     string
 	CheckInterval time.Duration
 	VaultAddress  string
@@ -47,9 +48,11 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 	app.ctx, app.cancel = context.WithCancel(ctx)
 	app.config = c
 
-	app.ssh, err = ssh.NewSSHAgentAuth("git")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to set up SSH authentication")
+	if c.NoSSH {
+		app.ssh, err = ssh.NewSSHAgentAuth("git")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to set up SSH authentication")
+		}
 	}
 
 	if c.VaultAddress != "" {
