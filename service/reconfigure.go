@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/Southclaws/gitwatch"
@@ -76,11 +77,21 @@ func (app *App) watchConfig() (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to watch config target")
 	}
-	go app.configWatcher.Run() //nolint:errcheck - no worthwhile errors returned
+
+	go func() {
+		e := app.configWatcher.Run()
+		if e != nil && !errors.Is(e, context.Canceled) {
+			app.errors <- e
+		}
+	}()
 	zap.L().Debug("created new config watcher, awaiting setup")
 
-	<-app.configWatcher.InitialDone
-	zap.L().Debug("config initial setup done")
+	select {
+	case <-app.configWatcher.InitialDone:
+		zap.L().Debug("config initial setup done")
+
+	case err = <-app.errors:
+	}
 
 	return
 }
@@ -88,10 +99,10 @@ func (app *App) watchConfig() (err error) {
 // watchTargets creates or restarts the watcher that reacts to changes to target
 // repositories that contain actual apps and services
 func (app *App) watchTargets() (err error) {
-	var targetURLs []string
-	for _, t := range app.targets {
+	targetURLs := make([]string, len(app.targets))
+	for i, t := range app.targets {
 		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
-		targetURLs = append(targetURLs, t.RepoURL)
+		targetURLs[i] = t.RepoURL
 	}
 
 	if app.targetsWatcher != nil {
@@ -107,11 +118,21 @@ func (app *App) watchTargets() (err error) {
 	if err != nil {
 		return errors.Wrap(err, "failed to watch targets")
 	}
-	go app.targetsWatcher.Run() //nolint:errcheck - no worthwhile errors returned
+
+	go func() {
+		e := app.targetsWatcher.Run()
+		if e != nil && !errors.Is(e, context.Canceled) {
+			app.errors <- e
+		}
+	}()
 	zap.L().Debug("created targets watcher, awaiting setup")
 
-	<-app.targetsWatcher.InitialDone
-	zap.L().Debug("targets initial setup done")
+	select {
+	case <-app.targetsWatcher.InitialDone:
+		zap.L().Debug("targets initial setup done")
+
+	case err = <-app.errors:
+	}
 
 	return
 }

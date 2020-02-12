@@ -29,6 +29,7 @@ type App struct {
 	state          config.State
 	ctx            context.Context
 	cancel         context.CancelFunc
+	errors         chan error
 }
 
 type Config struct {
@@ -100,7 +101,7 @@ func (app *App) Start() (final error) {
 					zap.Error(e))
 			}
 
-		case e := <-errorMultiplex(app.configWatcher.Errors, app.targetsWatcher.Errors):
+		case e := <-errorMultiplex(app.configWatcher.Errors, app.targetsWatcher.Errors, app.errors):
 			zap.L().Error("git error",
 				zap.Error(e))
 
