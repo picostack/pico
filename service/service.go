@@ -49,7 +49,7 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 	app.ctx, app.cancel = context.WithCancel(ctx)
 	app.config = c
 
-	if c.NoSSH {
+	if !c.NoSSH {
 		app.ssh, err = ssh.NewSSHAgentAuth("git")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to set up SSH authentication")
