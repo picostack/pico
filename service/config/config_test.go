@@ -26,6 +26,7 @@ func Test_applyFileTargets(t *testing.T) {
 				Name:    "name",
 				RepoURL: "../test.local",
 				Up:      []string{"echo", "hello world"},
+				Env:     map[string]string{},
 			},
 		}, false},
 		{"variable", `
@@ -37,9 +38,9 @@ func Test_applyFileTargets(t *testing.T) {
 
 		console.log("done!");
 		`, task.Targets{
-			{Name: "1", RepoURL: "https://github.com/Southclaws/project1", Up: []string{"sleep"}},
-			{Name: "2", RepoURL: "https://github.com/Southclaws/project2", Up: []string{"sleep"}},
-			{Name: "3", RepoURL: "https://github.com/Southclaws/project3", Up: []string{"sleep"}},
+			{Name: "1", RepoURL: "https://github.com/Southclaws/project1", Up: []string{"sleep"}, Env: map[string]string{}},
+			{Name: "2", RepoURL: "https://github.com/Southclaws/project2", Up: []string{"sleep"}, Env: map[string]string{}},
+			{Name: "3", RepoURL: "https://github.com/Southclaws/project3", Up: []string{"sleep"}, Env: map[string]string{}},
 		}, false},
 		{"envmap", `
 		var url = "https://github.com/Southclaws/";
@@ -65,8 +66,8 @@ func Test_applyFileTargets(t *testing.T) {
 		`, task.Targets{
 			{Name: "name", RepoURL: "../test.local", Up: []string{"sleep"}, Env: map[string]string{"GLOBAL": "readme", "LOCAL": "hi"}},
 		}, false},
-		{"badtype", `T({name: "name", url: "../test.local", up: 1.23})`, task.Targets{{}}, true},
-		{"missingkey", `T({name: "name", url: "../test.local"})`, task.Targets{{}}, true},
+		{"badtype", `T({name: "name", url: "../test.local", up: 1.23})`, task.Targets{}, true},
+		{"missingkey", `T({name: "name", url: "../test.local"})`, task.Targets{}, true},
 		{"env", `console.log(ENV["TEST_ENV_KEY"])`, task.Targets{}, false},
 		{"hostname", `console.log(HOSTNAME)`, task.Targets{}, false},
 	}
@@ -81,7 +82,7 @@ func Test_applyFileTargets(t *testing.T) {
 
 			os.Setenv("TEST_ENV_KEY", "an environment variable inside the JS vm")
 
-			err := cb.construct()
+			err := cb.construct("host")
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
