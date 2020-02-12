@@ -26,7 +26,6 @@ dockers:
       - southclaws/wadsworth:v{{ .Major }}
       - southclaws/wadsworth:v{{ .Major }}.{{ .Minor }}
       - southclaws/wadsworth:latest
-    dockerfile: Dockerfile.release
 nfpms:
   - vendor: Southclaws
     homepage: https://github.com/Southclaws/wadsworth
