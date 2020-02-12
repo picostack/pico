@@ -54,6 +54,14 @@ T({
 });
 ```
 
+You can also specify branches by suffixing the URL with a `#` followed by the branch name:
+
+```js
+...
+  url: "git@github.com:username/my-docker-compose-project#development",
+...
+```
+
 #### The `T` Function
 
 The `T` function declares a "Target" which is essentially a Git repository. In this example, the repository
