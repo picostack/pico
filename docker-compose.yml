@@ -1,0 +1,13 @@
+version: 3
+services:
+  image: southclaws/wadsworth:v1
+  environment:
+    HOSTNAME: ${HOSTNAME}
+    DEBUG: "1"
+    DIRECTORY: "/cache"
+    CHECK_INTERVAL: "10s"
+    VAULT_ADDR: "https://vault.my.infra.systems"
+    VAULT_TOKEN: ${VAULT_TOKEN}
+    VAULT_PATH: "a/subdirectory/inside/vault/"
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
