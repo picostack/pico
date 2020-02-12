@@ -2,6 +2,8 @@
 
 _The [Mister Handy robot][wadsworth] of automation!_
 
+[![Build Status](https://travis-ci.org/Southclaws/wadsworth.svg?branch=master)](https://travis-ci.org/Southclaws/wadsworth)
+
 Wadsworth is a git-driven task runner to automate the application of configs.
 
 ## Install
