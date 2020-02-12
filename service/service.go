@@ -101,11 +101,13 @@ func (app *App) Start() (final error) {
 				zap.Error(e))
 
 		case <-renew.C:
-			_, e := app.vault.Auth().Token().RenewSelf(86400)
+			s, e := app.vault.Auth().Token().RenewSelf(604800)
 			if e != nil {
 				zap.L().Error("failed to renew vault token",
 					zap.Error(e))
 			}
+			zap.L().Debug("successfully renewed vault token",
+				zap.Any("object", s))
 		}
 		return
 	}
