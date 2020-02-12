@@ -35,6 +35,33 @@ Currently, Wadsworth has a single command: `run` and it takes a single parameter
 this way instead of just using the target repos to define what Wadsworth should do is 1. to consolidate Wadsworth config
 into one place, 2. separate the config of the tools from the applications and 3. keep your target repos clean.
 
+## Usage as a Docker Container
+
+See the `docker-compose.yml` file for an example and read below for details.
+
+You can run Wadsworth as a Docker container. If you're using it to deploy Docker containers via compose, this makes the
+most sense. This is quite simple and is best done by writing a Docker Compose configuration for Wadsworth in order to
+bootstrap your deployment.
+
+The Wadsworth image is built on the `docker/compose` image, since most use-cases will use Docker or Compose to deploy
+services. This means you must mount the Docker API socket into the container, just like Portainer or cAdvisor or any of
+the other Docker tools that also run inside a container.
+
+The socket is located by default at `/var/run/docker.sock` and the `docker/compose` image expects this path too, so you
+just need to add a volume mount to your compose that specifies `/var/run/docker.sock:/var/run/docker.sock`.
+
+Another minor detail you should know is that Wadsworth exposes a `HOSTNAME` variable for the configuration script.
+However, when in a container, this hostname is a randomised string such as `b50fa67783ad`. This means, if your
+configuration performs checks such as `if (HOSTNAME === 'server031')`, this won't work. To resolve this, Wadsworth will
+attempt to read the environment variable `HOSTNAME` and use that instead of using `/etc/hostname`.
+
+This means, you can bootstrap a Wadsworth deployment with only two variables:
+
+```env
+VAULT_TOKEN=abcxyz
+HOSTNAME=server012
+```
+
 ### Configuration
 
 The precursor to Wadsworth used JSON for configuration, this was fine for simple tasks but the ability to provide a

@@ -33,6 +33,7 @@ type App struct {
 
 type Config struct {
 	Target        string
+	Hostname      string
 	NoSSH         bool
 	Directory     string
 	CheckInterval time.Duration
@@ -72,7 +73,7 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 		}
 	}
 
-	err = app.reconfigure()
+	err = app.reconfigure(c.Hostname)
 	if err != nil {
 		return
 	}
@@ -89,7 +90,7 @@ func (app *App) Start() (final error) {
 	f := func() (err error) {
 		select {
 		case <-app.configWatcher.Events:
-			err = app.reconfigure()
+			err = app.reconfigure(app.config.Hostname)
 
 		case event := <-app.targetsWatcher.Events:
 			e := app.handle(event)

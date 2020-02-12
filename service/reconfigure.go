@@ -18,7 +18,7 @@ import (
 // read the configuration file(s) from the repository, gather all the targets
 // and set up the target watcher. This should always happen in sync with the
 // rest of the service to prevent a reconfiguration during an event handler.
-func (app *App) reconfigure() (err error) {
+func (app *App) reconfigure(hostname string) (err error) {
 	zap.L().Debug("reconfiguring")
 
 	err = app.watchConfig()
@@ -31,7 +31,12 @@ func (app *App) reconfigure() (err error) {
 	if err != nil {
 		return
 	}
-	state := getNewState(path, app.state)
+	state := getNewState(path, hostname, app.state)
+
+	// Set the HOSTNAME config environment variable if necessary.
+	if app.config.Hostname != "" {
+		state.Env["HOSTNAME"] = app.config.Hostname
+	}
 
 	// diff targets
 	additions, removals := diffTargets(app.targets, state.Targets)
@@ -113,8 +118,8 @@ func (app *App) watchTargets() (err error) {
 
 // getNewState attempts to obtain a new desired state from the given path, if
 // any failures occur, it simply returns a fallback state and logs an error
-func getNewState(path string, fallback config.State) (state config.State) {
-	state, err := config.ConfigFromDirectory(path)
+func getNewState(path, hostname string, fallback config.State) (state config.State) {
+	state, err := config.ConfigFromDirectory(path, hostname)
 	if err != nil {
 		zap.L().Error("failed to construct config from repo, falling back to original state",
 			zap.Error(err))

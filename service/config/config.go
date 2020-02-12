@@ -21,7 +21,7 @@ type State struct {
 
 // ConfigFromDirectory searches a directory for configuration files and
 // constructs a desired state from the declarations.
-func ConfigFromDirectory(dir string) (state State, err error) {
+func ConfigFromDirectory(dir, hostname string) (state State, err error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		err = errors.Wrap(err, "failed to read config directory")
@@ -46,7 +46,7 @@ func ConfigFromDirectory(dir string) (state State, err error) {
 		scripts: sources,
 	}
 
-	err = cb.construct()
+	err = cb.construct(hostname)
 	if err != nil {
 		return
 	}
@@ -61,7 +61,7 @@ type configBuilder struct {
 	scripts []string
 }
 
-func (cb *configBuilder) construct() (err error) {
+func (cb *configBuilder) construct(hostname string) (err error) {
 	//nolint:errcheck
 	cb.vm.Run(`'use strict';
 var STATE = {
@@ -86,10 +86,6 @@ function E(k, v) {
 }
 `)
 
-	hostname, err := os.Hostname()
-	if err != nil {
-		return errors.Wrap(err, "failed to get hostname")
-	}
 	cb.vm.Set("HOSTNAME", hostname) //nolint:errcheck
 
 	env := make(map[string]string)

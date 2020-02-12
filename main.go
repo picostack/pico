@@ -59,6 +59,7 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 			Usage:     "argument `target` specifies Git repository for configuration.",
 			ArgsUsage: "target",
 			Flags: []cli.Flag{
+				cli.StringFlag{Name: "hostname", EnvVar: "HOSTNAME"},
 				cli.StringFlag{Name: "directory", EnvVar: "DIRECTORY", Value: "./cache/"},
 				cli.BoolFlag{Name: "no-ssh", EnvVar: "NO_SSH"},
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 10},
@@ -75,10 +76,20 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
+				// If no hostname is provided, use the actual host's hostname
+				hostname := c.String("hostname")
+				if hostname == "" {
+					hostname, err = os.Hostname()
+					if err != nil {
+						return errors.Wrap(err, "failed to get hostname")
+					}
+				}
+
 				svc, err := service.Initialise(ctx, service.Config{
 					Target:        c.Args().First(),
-					NoSSH:         c.Bool("no-ssh"),
+					Hostname:      hostname,
 					Directory:     c.String("directory"),
+					NoSSH:         c.Bool("no-ssh"),
 					CheckInterval: c.Duration("check-interval"),
 					VaultAddress:  c.String("vault-addr"),
 					VaultToken:    c.String("vault-token"),
