@@ -1,5 +1,7 @@
 module github.com/Southclaws/wadsworth
 
+go 1.13
+
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895 // indirect
@@ -93,5 +95,3 @@ require (
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
-
-go 1.13
