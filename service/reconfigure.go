@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"path/filepath"
 	"reflect"
 
 	"github.com/Southclaws/gitwatch"
@@ -28,11 +29,15 @@ func (app *App) reconfigure(hostname string) (err error) {
 	}
 
 	// generate a new desired state from the config repo
-	path, err := gitwatch.GetRepoPath(app.config.Directory, app.config.Target)
+	path, err := gitwatch.GetRepoDirectory(app.config.Target)
 	if err != nil {
 		return
 	}
-	state := getNewState(path, hostname, app.state)
+	state := getNewState(
+		filepath.Join(app.config.Directory, path),
+		hostname,
+		app.state,
+	)
 
 	// Set the HOSTNAME config environment variable if necessary.
 	if app.config.Hostname != "" {
@@ -69,7 +74,7 @@ func (app *App) watchConfig() (err error) {
 
 	app.configWatcher, err = gitwatch.New(
 		app.ctx,
-		[]string{app.config.Target},
+		[]gitwatch.Repository{{URL: app.config.Target}},
 		app.config.CheckInterval,
 		app.config.Directory,
 		app.ssh,
@@ -99,10 +104,14 @@ func (app *App) watchConfig() (err error) {
 // watchTargets creates or restarts the watcher that reacts to changes to target
 // repositories that contain actual apps and services
 func (app *App) watchTargets() (err error) {
-	targetURLs := make([]string, len(app.targets))
+	targetRepos := make([]gitwatch.Repository, len(app.targets))
 	for i, t := range app.targets {
 		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
-		targetURLs[i] = t.RepoURL
+		targetRepos[i] = gitwatch.Repository{
+			URL: t.RepoURL,
+			//  Branch: t.Branch, // TODO: branches
+			Directory: t.Name,
+		}
 	}
 
 	if app.targetsWatcher != nil {
@@ -110,7 +119,7 @@ func (app *App) watchTargets() (err error) {
 	}
 	app.targetsWatcher, err = gitwatch.New(
 		app.ctx,
-		targetURLs,
+		targetRepos,
 		app.config.CheckInterval,
 		app.config.Directory,
 		app.ssh,
