@@ -108,8 +108,8 @@ func (app *App) watchTargets() (err error) {
 	for i, t := range app.targets {
 		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
 		targetRepos[i] = gitwatch.Repository{
-			URL: t.RepoURL,
-			//  Branch: t.Branch, // TODO: branches
+			URL:       t.RepoURL,
+			Branch:    t.Branch,
 			Directory: t.Name,
 		}
 	}

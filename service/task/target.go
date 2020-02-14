@@ -21,6 +21,9 @@ type Target struct {
 	// The repository URL to watch for changes, either http or ssh.
 	RepoURL string `required:"true" json:"url"`
 
+	// The git branch to use
+	Branch string `json:"branch"`
+
 	// The command to run on each new Git commit
 	Up []string `required:"true" json:"up"`
 
