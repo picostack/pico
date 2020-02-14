@@ -85,6 +85,8 @@ this repository has new commits, Wadsworth will automatically reconfigure.`,
 					}
 				}
 
+				zap.L().Debug("initialising service")
+
 				svc, err := service.Initialise(ctx, service.Config{
 					Target:        c.Args().First(),
 					Hostname:      hostname,
