@@ -78,7 +78,7 @@ func (app *App) watchConfig() (err error) {
 		app.config.CheckInterval,
 		app.config.Directory,
 		app.ssh,
-		true)
+		false)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch config target")
 	}
@@ -90,13 +90,6 @@ func (app *App) watchConfig() (err error) {
 		}
 	}()
 	zap.L().Debug("created new config watcher, awaiting setup")
-
-	select {
-	case <-app.configWatcher.InitialDone:
-		zap.L().Debug("config initial setup done")
-
-	case err = <-app.errors:
-	}
 
 	return
 }
@@ -123,7 +116,7 @@ func (app *App) watchTargets() (err error) {
 		app.config.CheckInterval,
 		app.config.Directory,
 		app.ssh,
-		true)
+		false)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch targets")
 	}
@@ -135,13 +128,6 @@ func (app *App) watchTargets() (err error) {
 		}
 	}()
 	zap.L().Debug("created targets watcher, awaiting setup")
-
-	select {
-	case <-app.targetsWatcher.InitialDone:
-		zap.L().Debug("targets initial setup done")
-
-	case err = <-app.errors:
-	}
 
 	return
 }
