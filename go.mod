@@ -3,7 +3,7 @@ module github.com/Southclaws/wadsworth
 go 1.13
 
 require (
-	github.com/Southclaws/gitwatch v1.3.0
+	github.com/Southclaws/gitwatch v1.3.1
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/frankban/quicktest v1.4.1 // indirect
 	github.com/go-test/deep v1.0.2 // indirect
