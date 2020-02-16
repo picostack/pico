@@ -91,6 +91,8 @@ func (app *App) watchConfig() (err error) {
 	}()
 	zap.L().Debug("created new config watcher, awaiting setup")
 
+	<-app.configWatcher.InitialDone
+
 	return
 }
 
@@ -129,6 +131,8 @@ func (app *App) watchTargets() (err error) {
 	}()
 	zap.L().Debug("created targets watcher, awaiting setup")
 
+	<-app.targetsWatcher.InitialDone
+
 	return
 }
 
@@ -138,6 +142,8 @@ func getNewState(path, hostname string, fallback config.State) (state config.Sta
 	state, err := config.ConfigFromDirectory(path, hostname)
 	if err != nil {
 		zap.L().Error("failed to construct config from repo, falling back to original state",
+			zap.String("path", path),
+			zap.String("hostname", hostname),
 			zap.Error(err))
 
 		state = fallback
