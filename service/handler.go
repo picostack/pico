@@ -1,6 +1,8 @@
 package service
 
 import (
+	"path/filepath"
+
 	"github.com/Southclaws/gitwatch"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -49,13 +51,11 @@ func (app App) getTarget(url string) (target task.Target, exists bool) {
 func (app App) executeTargets(targets []task.Target, shutdown bool) {
 	zap.L().Debug("executing all targets", zap.Bool("shutdown", shutdown))
 	for _, t := range targets {
-		p, err := gitwatch.GetRepoPath(app.config.Directory, t.RepoURL)
-		if err != nil {
-			zap.L().Error("failed to get target repo path",
-				zap.Error(errors.Cause(err)))
-			continue
-		}
-		err = app.executeWithSecrets(t, p, shutdown)
+		err := app.executeWithSecrets(
+			t,
+			filepath.Join(app.config.Directory, t.Name),
+			shutdown,
+		)
 		if err != nil {
 			zap.L().Error("failed to execute task after reconfigure",
 				zap.Error(errors.Cause(err)))

@@ -16,10 +16,13 @@ type Targets []Target
 // is updated.
 type Target struct {
 	// An optional label for the target
-	Name string `json:"name"`
+	Name string `required:"true" json:"name"`
 
 	// The repository URL to watch for changes, either http or ssh.
 	RepoURL string `required:"true" json:"url"`
+
+	// The git branch to use
+	Branch string `json:"branch"`
 
 	// The command to run on each new Git commit
 	Up []string `required:"true" json:"up"`
