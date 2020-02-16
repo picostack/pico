@@ -11,3 +11,4 @@ services:
     VAULT_PATH: "a/subdirectory/inside/vault/"
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
+    - /cache:/cache

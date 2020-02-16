@@ -6,6 +6,16 @@ _The [Mister Handy robot][wadsworth] of automation!_
 
 Wadsworth is a git-driven task runner to automate the application of configs.
 
+## Overview
+
+Wadsworth is a little tool for implementing [Git-Ops][git-ops] in single-server environments. It's analogous to
+[kube-applier][kube-applier], [Terraform][terraform], [Ansible][ansible] but for automating lone servers that do not
+need cluster-level orchestration.
+
+Instead, Wadsworth aims to be extremely simple. You give it some Git repositories and tell it to run commands when those
+Git repositories receive commits and that's about it. It also provides a way of safely passing in credentials from
+[Hashicorp's Vault][vault].
+
 ## Install
 
 ### Linux
@@ -19,16 +29,6 @@ curl -s https://raw.githubusercontent.com/Southclaws/wadsworth/master/install.sh
 It's primarily a server side tool aimed at Linux servers, so there aren't any install scripts for other platforms. Most
 Windows/Mac usage is probably just local testing so just use `go get` for these use-cases.
 
-## Overview
-
-Wadsworth is a little tool for implementing [Git-Ops][git-ops] in single-server environments. It's not a cloud/cluster
-tool however it could easily be used as one, but you'd probably be better off using something like
-[kube-applier][kube-applier], [Terraform][terraform], [Ansible][ansible] or any of these more "serious" tools.
-
-Instead, Wadsworth aims to be extremely simple. You give it some Git repositories and tell it to run commands when those
-Git repositories receive commits and that's about it. It also provides a way of safely passing in credentials from
-[Hashicorp's Vault][vault] so you can say goodbye to storing your MySQL password in a .env file!
-
 ## Usage
 
 Currently, Wadsworth has a single command: `run` and it takes a single parameter: a Git URL. This Git URL defines the
@@ -37,32 +37,7 @@ Currently, Wadsworth has a single command: `run` and it takes a single parameter
 this way instead of just using the target repos to define what Wadsworth should do is 1. to consolidate Wadsworth config
 into one place, 2. separate the config of the tools from the applications and 3. keep your target repos clean.
 
-## Usage as a Docker Container
-
-See the `docker-compose.yml` file for an example and read below for details.
-
-You can run Wadsworth as a Docker container. If you're using it to deploy Docker containers via compose, this makes the
-most sense. This is quite simple and is best done by writing a Docker Compose configuration for Wadsworth in order to
-bootstrap your deployment.
-
-The Wadsworth image is built on the `docker/compose` image, since most use-cases will use Docker or Compose to deploy
-services. This means you must mount the Docker API socket into the container, just like Portainer or cAdvisor or any of
-the other Docker tools that also run inside a container.
-
-The socket is located by default at `/var/run/docker.sock` and the `docker/compose` image expects this path too, so you
-just need to add a volume mount to your compose that specifies `/var/run/docker.sock:/var/run/docker.sock`.
-
-Another minor detail you should know is that Wadsworth exposes a `HOSTNAME` variable for the configuration script.
-However, when in a container, this hostname is a randomised string such as `b50fa67783ad`. This means, if your
-configuration performs checks such as `if (HOSTNAME === 'server031')`, this won't work. To resolve this, Wadsworth will
-attempt to read the environment variable `HOSTNAME` and use that instead of using `/etc/hostname`.
-
-This means, you can bootstrap a Wadsworth deployment with only two variables:
-
-```env
-VAULT_TOKEN=abcxyz
-HOSTNAME=server012
-```
+Wadsworth also has a Docker image - see below for docker-specific information.
 
 ### Configuration
 
@@ -78,17 +53,10 @@ Compose stack whenever it changes:
 T({
   name: "my_app",
   url: "git@github.com:username/my-docker-compose-project",
+  branch: "prod",
   up: ["docker-compose", "up", "-d"],
   down: ["docker-compose", "down"]
 });
-```
-
-You can also specify branches by suffixing the URL with a `#` followed by the branch name:
-
-```js
-...
-  url: "git@github.com:username/my-docker-compose-project#development",
-...
 ```
 
 #### The `T` Function
@@ -160,3 +128,44 @@ have a bunch of compose configs that all mount data to some path on the machine,
 [ansible]: https://ansible.com
 [vault]: https://vaultproject.io
 [dnscontrol]: https://stackexchange.github.io/dnscontrol/
+
+## Usage as a Docker Container
+
+See the `docker-compose.yml` file for an example and read below for details.
+
+You can run Wadsworth as a Docker container. If you're using it to deploy Docker containers via compose, this makes the
+most sense. This is quite simple and is best done by writing a Docker Compose configuration for Wadsworth in order to
+bootstrap your deployment.
+
+The Wadsworth image is built on the `docker/compose` image, since most use-cases will use Docker or Compose to deploy
+services. This means you must mount the Docker API socket into the container, just like Portainer or cAdvisor or any of
+the other Docker tools that also run inside a container.
+
+The socket is located by default at `/var/run/docker.sock` and the `docker/compose` image expects this path too, so you
+just need to add a volume mount to your compose that specifies `/var/run/docker.sock:/var/run/docker.sock`.
+
+Another minor detail you should know is that Wadsworth exposes a `HOSTNAME` variable for the configuration script.
+However, when in a container, this hostname is a randomised string such as `b50fa67783ad`. This means, if your
+configuration performs checks such as `if (HOSTNAME === 'server031')`, this won't work. To resolve this, Wadsworth will
+attempt to read the environment variable `HOSTNAME` and use that instead of using `/etc/hostname`.
+
+This means, you can bootstrap a Wadsworth deployment with only two variables:
+
+```env
+VAULT_TOKEN=abcxyz
+HOSTNAME=server012
+```
+
+### Docker Compose and `./` in Container Volume Mounts
+
+Another caveat to running Wadsworth in a container to execute `docker-compose` is the container filesystem will not
+match the host filesystem paths.
+
+If you mount directories from your repository - a common strategy for versioning configuration - `./` will be expanded
+by Docker compose running inside the container, but this path may not be valid in the context of the Docker daemon,
+which will be running on the host.
+
+The solution to this is both `DIRECTORY: "/cache"` and `/cache:/cache`: as long as the path used in the container also
+exists on the host, Docker compose will expand `./` to the same path as the host and everything will work fine.
+
+This also means your config and target configurations will be persisted on the host's filesystem.
