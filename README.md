@@ -24,6 +24,14 @@ Git repositories receive commits and that's about it. It also provides a way of 
 curl -s https://raw.githubusercontent.com/Southclaws/wadsworth/master/install.sh | bash
 ```
 
+Or via Docker:
+
+```sh
+docker pull southclaws/wadsworth:v1
+```
+
+See the docker section below and the image on [Docker Hub](https://hub.docker.com/r/southclaws/wadsworth).
+
 ### Everything Else
 
 It's primarily a server side tool aimed at Linux servers, so there aren't any install scripts for other platforms. Most
