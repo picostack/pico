@@ -107,7 +107,7 @@ func (app *App) Start() (final error) {
 				zap.Error(e))
 
 		case <-renew.C:
-			s, e := app.vault.Auth().Token().RenewSelf(604800)
+			s, e := app.vault.Auth().Token().RenewSelf(0)
 			if e != nil {
 				zap.L().Error("failed to renew vault token",
 					zap.Error(e))
