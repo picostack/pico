@@ -19,7 +19,7 @@
 .env
 
 # The binary
-wadsworth
+picobot
 dist
 .env
 cache

@@ -1,6 +1,6 @@
 version: 3
 services:
-  image: southclaws/wadsworth:v1
+  image: picostack/picobot:v1
   environment:
     HOSTNAME: ${HOSTNAME}
     DEBUG: "1"

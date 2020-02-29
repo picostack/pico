@@ -1,4 +1,4 @@
-module github.com/Southclaws/wadsworth
+module github.com/picostack/picobot
 
 go 1.13
 

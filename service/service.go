@@ -14,8 +14,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
-	"github.com/Southclaws/wadsworth/service/config"
-	"github.com/Southclaws/wadsworth/service/task"
+	"github.com/picostack/picobot/service/config"
+	"github.com/picostack/picobot/service/task"
 )
 
 // App stores application state

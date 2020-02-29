@@ -1,4 +1,4 @@
-project_name: wadsworth
+project_name: picobot
 builds:
   - env:
       - CGO_ENABLED=0
@@ -22,13 +22,13 @@ changelog:
       - "^test:"
 dockers:
   - image_templates:
-      - southclaws/wadsworth:{{ .Tag }}
-      - southclaws/wadsworth:v{{ .Major }}
-      - southclaws/wadsworth:v{{ .Major }}.{{ .Minor }}
-      - southclaws/wadsworth:latest
+      - picostack/picobot:{{ .Tag }}
+      - picostack/picobot:v{{ .Major }}
+      - picostack/picobot:v{{ .Major }}.{{ .Minor }}
+      - picostack/picobot:latest
 nfpms:
   - vendor: Southclaws
-    homepage: https://github.com/Southclaws/wadsworth
+    homepage: https://github.com/picostack/picobot
     maintainer: Southclaws <hello@southcla.ws>
     description: |
       A docker-compose application manager that deploys and maintains a set of
