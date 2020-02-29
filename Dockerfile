@@ -1,3 +1,3 @@
 FROM docker/compose
-COPY wadsworth /bin/wadsworth
-ENTRYPOINT ["wadsworth"]
+COPY picobot /bin/picobot
+ENTRYPOINT ["picobot"]

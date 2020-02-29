@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/Southclaws/wadsworth/service"
+	"github.com/picostack/picobot/service"
 )
 
 var version = "master"
@@ -41,11 +41,11 @@ func init() {
 func main() {
 	app := cli.NewApp()
 
-	app.Name = "wadsworth"
+	app.Name = "picobot"
 	app.Usage = "A git-driven task automation butler."
-	app.UsageText = `wadsworth [flags] [command]`
+	app.UsageText = `picobot [flags] [command]`
 	app.Version = version
-	app.Description = `Wadsworth is a git-driven task runner to automate the application of configs.`
+	app.Description = `Picobot is a git-driven task runner to automate the application of configs.`
 	app.Author = "Southclaws"
 	app.Email = "hello@southcla.ws"
 
@@ -53,9 +53,9 @@ func main() {
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
-			Description: `Starts the Wadsworth daemon with the specified target repository. This
-repository should contain one or more configuration files for Wadsworth. When
-this repository has new commits, Wadsworth will automatically reconfigure.`,
+			Description: `Starts the Picobot daemon with the specified target repository. This
+repository should contain one or more configuration files for Picobot. When
+this repository has new commits, Picobot will automatically reconfigure.`,
 			Usage:     "argument `target` specifies Git repository for configuration.",
 			ArgsUsage: "target",
 			Flags: []cli.Flag{
