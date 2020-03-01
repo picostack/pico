@@ -17,6 +17,7 @@
 # Local repos for tests
 *.local
 .env
+.psenvrc
 
 # The binary
 picobot
