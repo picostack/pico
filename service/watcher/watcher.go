@@ -82,8 +82,6 @@ func (w *Watcher) Start() error {
 			return err
 		}
 	}
-
-	return nil
 }
 
 func errorMultiplex(chans ...<-chan error) <-chan error {
