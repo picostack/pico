@@ -85,10 +85,12 @@ func (app *App) Start(ctx context.Context) error {
 
 	g.Go(app.watcher.Start)
 
-	g.Go(func() error {
-		return retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil).
-			RunCtx(ctx, app.secrets.Renew)
-	})
+	if s, ok := app.secrets.(*vault.VaultSecrets); ok {
+		g.Go(func() error {
+			return retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil).
+				RunCtx(ctx, s.Renew)
+		})
+	}
 
 	return g.Wait()
 }
