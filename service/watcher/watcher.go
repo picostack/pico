@@ -52,14 +52,14 @@ func New(
 }
 
 func (w *Watcher) Start() error {
-	if err := w.reconfigure(w.hostname); err != nil {
+	if err := w.reconfigure(); err != nil {
 		return err
 	}
 
 	f := func() (err error) {
 		select {
 		case <-w.configWatcher.Events:
-			err = w.reconfigure(w.hostname)
+			err = w.reconfigure()
 
 		case event := <-w.targetsWatcher.Events:
 			if e := w.handle(event); e != nil {

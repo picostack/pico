@@ -20,7 +20,7 @@ import (
 // read the configuration file(s) from the repository, gather all the targets
 // and set up the target watcher. This should always happen in sync with the
 // rest of the service to prevent a reconfiguration during an event handler.
-func (w *Watcher) reconfigure(hostname string) (err error) {
+func (w *Watcher) reconfigure() (err error) {
 	zap.L().Debug("reconfiguring")
 
 	err = w.watchConfig()
@@ -35,7 +35,7 @@ func (w *Watcher) reconfigure(hostname string) (err error) {
 	}
 	state := getNewState(
 		filepath.Join(w.directory, path),
-		hostname,
+		w.hostname,
 		w.state,
 	)
 
