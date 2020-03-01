@@ -1,4 +1,4 @@
-package service
+package watcher
 
 import (
 	"context"
@@ -20,87 +20,87 @@ import (
 // read the configuration file(s) from the repository, gather all the targets
 // and set up the target watcher. This should always happen in sync with the
 // rest of the service to prevent a reconfiguration during an event handler.
-func (app *App) reconfigure(hostname string) (err error) {
+func (w *Watcher) reconfigure(hostname string) (err error) {
 	zap.L().Debug("reconfiguring")
 
-	err = app.watchConfig()
+	err = w.watchConfig()
 	if err != nil {
 		return
 	}
 
 	// generate a new desired state from the config repo
-	path, err := gitwatch.GetRepoDirectory(app.config.Target)
+	path, err := gitwatch.GetRepoDirectory(w.configRepo)
 	if err != nil {
 		return
 	}
 	state := getNewState(
-		filepath.Join(app.config.Directory, path),
+		filepath.Join(w.directory, path),
 		hostname,
-		app.state,
+		w.state,
 	)
 
 	// Set the HOSTNAME config environment variable if necessary.
-	if app.config.Hostname != "" {
-		state.Env["HOSTNAME"] = app.config.Hostname
+	if w.hostname != "" {
+		state.Env["HOSTNAME"] = w.hostname
 	}
 
 	// diff targets
-	additions, removals := diffTargets(app.targets, state.Targets)
-	app.targets = state.Targets
+	additions, removals := diffTargets(w.targets, state.Targets)
+	w.targets = state.Targets
 
-	err = app.watchTargets()
+	err = w.watchTargets()
 	if err != nil {
 		return
 	}
 
 	// out with the old, in with the new!
-	app.executeTargets(removals, true)
-	app.executeTargets(additions, false)
+	w.executeTargets(removals, true)
+	w.executeTargets(additions, false)
 
 	zap.L().Debug("targets initial up done")
 
-	app.state = state
+	w.state = state
 
 	return
 }
 
 // watchConfig creates or restarts the watcher that reacts to changes to the
 // repo that contains picobot configuration scripts
-func (app *App) watchConfig() (err error) {
-	if app.configWatcher != nil {
+func (w *Watcher) watchConfig() (err error) {
+	if w.configWatcher != nil {
 		zap.L().Debug("closing existing watcher")
-		app.configWatcher.Close()
+		w.configWatcher.Close()
 	}
 
-	app.configWatcher, err = gitwatch.New(
-		app.ctx,
-		[]gitwatch.Repository{{URL: app.config.Target}},
-		app.config.CheckInterval,
-		app.config.Directory,
-		app.ssh,
+	w.configWatcher, err = gitwatch.New(
+		context.TODO(),
+		[]gitwatch.Repository{{URL: w.configRepo}},
+		w.checkInterval,
+		w.directory,
+		w.ssh,
 		false)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch config target")
 	}
 
 	go func() {
-		e := app.configWatcher.Run()
+		e := w.configWatcher.Run()
 		if e != nil && !errors.Is(e, context.Canceled) {
-			app.errors <- e
+			w.errors <- e
 		}
 	}()
 	zap.L().Debug("created new config watcher, awaiting setup")
 
-	<-app.configWatcher.InitialDone
+	<-w.configWatcher.InitialDone
 
 	return
 }
 
 // watchTargets creates or restarts the watcher that reacts to changes to target
 // repositories that contain actual apps and services
-func (app *App) watchTargets() (err error) {
-	targetRepos := make([]gitwatch.Repository, len(app.targets))
-	for i, t := range app.targets {
+func (w *Watcher) watchTargets() (err error) {
+	targetRepos := make([]gitwatch.Repository, len(w.targets))
+	for i, t := range w.targets {
 		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
 		targetRepos[i] = gitwatch.Repository{
 			URL:       t.RepoURL,
@@ -109,29 +109,29 @@ func (app *App) watchTargets() (err error) {
 		}
 	}
 
-	if app.targetsWatcher != nil {
-		app.targetsWatcher.Close()
+	if w.targetsWatcher != nil {
+		w.targetsWatcher.Close()
 	}
-	app.targetsWatcher, err = gitwatch.New(
-		app.ctx,
+	w.targetsWatcher, err = gitwatch.New(
+		context.TODO(),
 		targetRepos,
-		app.config.CheckInterval,
-		app.config.Directory,
-		app.ssh,
+		w.checkInterval,
+		w.directory,
+		w.ssh,
 		false)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch targets")
 	}
 
 	go func() {
-		e := app.targetsWatcher.Run()
+		e := w.targetsWatcher.Run()
 		if e != nil && !errors.Is(e, context.Canceled) {
-			app.errors <- e
+			w.errors <- e
 		}
 	}()
 	zap.L().Debug("created targets watcher, awaiting setup")
 
-	<-app.targetsWatcher.InitialDone
+	<-w.targetsWatcher.InitialDone
 
 	return
 }

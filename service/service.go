@@ -2,36 +2,22 @@ package service
 
 import (
 	"context"
-	"path/filepath"
-	"sync"
 	"time"
 
-	"github.com/Southclaws/gitwatch"
-	"github.com/hashicorp/go-cleanhttp"
-	"github.com/hashicorp/vault/api"
+	"github.com/eapache/go-resiliency/retrier"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
-	"github.com/picostack/picobot/service/config"
-	"github.com/picostack/picobot/service/task"
+	"github.com/picostack/picobot/service/secret"
+	"github.com/picostack/picobot/service/secret/memory"
+	"github.com/picostack/picobot/service/secret/vault"
+	"github.com/picostack/picobot/service/watcher"
 )
 
-// App stores application state
-type App struct {
-	config         Config
-	configWatcher  *gitwatch.Session
-	targets        []task.Target
-	targetsWatcher *gitwatch.Session
-	ssh            transport.AuthMethod
-	vault          *api.Client
-	state          config.State
-	ctx            context.Context
-	cancel         context.CancelFunc
-	errors         chan error
-}
-
+// Config specifies static configuration parameters (from CLI or environment)
 type Config struct {
 	Target        string
 	Hostname      string
@@ -44,108 +30,65 @@ type Config struct {
 	VaultRenewal  time.Duration
 }
 
+// App stores application state
+type App struct {
+	config  Config
+	watcher *watcher.Watcher
+	secrets secret.Store
+}
+
 // Initialise prepares an instance of the app to run
-func Initialise(ctx context.Context, c Config) (app *App, err error) {
+func Initialise(c Config) (app *App, err error) {
 	app = new(App)
 
-	app.ctx, app.cancel = context.WithCancel(ctx)
 	app.config = c
-	app.errors = make(chan error)
 
+	var authMethod transport.AuthMethod
 	if !c.NoSSH {
-		app.ssh, err = ssh.NewSSHAgentAuth("git")
+		authMethod, err = ssh.NewSSHAgentAuth("git")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to set up SSH authentication")
 		}
 	}
 
+	var secretStore secret.Store
 	if c.VaultAddress != "" {
-		vaultConfig := &api.Config{
-			Address:    c.VaultAddress,
-			HttpClient: cleanhttp.DefaultClient(),
-		}
-		app.vault, err = api.NewClient(vaultConfig)
+		secretStore, err = vault.New(c.VaultAddress, c.VaultPath, c.VaultToken, c.VaultRenewal)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to connect to vault")
+			return nil, err
 		}
-		app.vault.SetToken(c.VaultToken)
-
-		_, err = app.vault.Logical().List(filepath.Join("/secret", c.VaultPath, "metadata"))
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to ping secrets metadata endpoint")
+	} else {
+		secretStore = &memory.MemorySecrets{
+			// TODO: pull env vars with PICO_SECRET_* or something and shove em here
 		}
 	}
 
-	err = app.reconfigure(c.Hostname)
-	if err != nil {
-		return
-	}
+	app.secrets = secretStore
+
+	app.watcher = watcher.New(
+		secretStore,
+		c.Hostname,
+		c.Directory,
+		c.Target,
+		c.CheckInterval,
+		authMethod,
+	)
 
 	return
 }
 
 // Start launches the app and blocks until fatal error
-func (app *App) Start() (final error) {
-	renew := time.NewTicker(app.config.VaultRenewal)
-	defer renew.Stop()
-
-	f := func() (err error) {
-		select {
-		case <-app.configWatcher.Events:
-			err = app.reconfigure(app.config.Hostname)
-
-		case event := <-app.targetsWatcher.Events:
-			e := app.handle(event)
-			if e != nil {
-				zap.L().Error("failed to handle event",
-					zap.String("url", event.URL),
-					zap.Error(e))
-			}
-
-		case e := <-errorMultiplex(app.configWatcher.Errors, app.targetsWatcher.Errors, app.errors):
-			zap.L().Error("git error",
-				zap.Error(e))
-
-		case <-renew.C:
-			s, e := app.vault.Auth().Token().RenewSelf(0)
-			if e != nil {
-				zap.L().Error("failed to renew vault token",
-					zap.Error(e))
-			}
-			zap.L().Debug("successfully renewed vault token",
-				zap.Any("object", s))
-		}
-		return
-	}
+func (app *App) Start(ctx context.Context) error {
+	g, ctx := errgroup.WithContext(ctx)
 
 	zap.L().Debug("starting service daemon")
 
-	for {
-		final = f()
-		if final != nil {
-			break
-		}
-	}
-	return
-}
+	g.Go(app.watcher.Start)
 
-func errorMultiplex(chans ...<-chan error) <-chan error {
-	out := make(chan error)
-	go func() {
-		var wg sync.WaitGroup
-		wg.Add(len(chans))
+	g.Go(func() error {
+		return retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil).
+			RunCtx(ctx, app.secrets.Renew)
+	})
 
-		for _, c := range chans {
-			go func(c <-chan error) {
-				for v := range c {
-					out <- v
-				}
-				wg.Done()
-			}(c)
-		}
-
-		wg.Wait()
-		close(out)
-	}()
-	return out
+	return g.Wait()
 }

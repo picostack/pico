@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/Southclaws/gitwatch v1.3.2
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/eapache/go-resiliency v1.2.0
 	github.com/frankban/quicktest v1.4.1 // indirect
 	github.com/go-test/deep v1.0.2 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
@@ -26,6 +27,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200210222208-86ce3cb69678 // indirect
 	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20200213200052-63d1300efe97 // indirect

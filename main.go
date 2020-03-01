@@ -65,7 +65,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 10},
 				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR"},
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
-				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH"},
+				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH", Value: "/secret"},
 				cli.DurationFlag{Name: "vault-renew-interval", EnvVar: "VAULT_RENEW_INTERVAL", Value: time.Hour * 24},
 			},
 			Action: func(c *cli.Context) (err error) {
@@ -88,7 +88,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 
 				zap.L().Debug("initialising service")
 
-				svc, err := service.Initialise(ctx, service.Config{
+				svc, err := service.Initialise(service.Config{
 					Target:        c.Args().First(),
 					Hostname:      hostname,
 					Directory:     c.String("directory"),
@@ -106,7 +106,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 				zap.L().Info("service initialised")
 
 				errs := make(chan error, 1)
-				go func() { errs <- svc.Start() }()
+				go func() { errs <- svc.Start(ctx) }()
 
 				s := make(chan os.Signal, 1)
 				signal.Notify(s, os.Interrupt)
