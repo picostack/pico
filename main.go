@@ -66,6 +66,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR"},
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
 				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH"},
+				cli.DurationFlag{Name: "vault-renew-interval", EnvVar: "VAULT_RENEW_INTERVAL", Value: time.Hour * 24},
 			},
 			Action: func(c *cli.Context) (err error) {
 				if !c.Args().Present() {
@@ -96,6 +97,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 					VaultAddress:  c.String("vault-addr"),
 					VaultToken:    c.String("vault-token"),
 					VaultPath:     c.String("vault-path"),
+					VaultRenewal:  c.Duration("vault-renew-interval"),
 				})
 				if err != nil {
 					return errors.Wrap(err, "failed to initialise")

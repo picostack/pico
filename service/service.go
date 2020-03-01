@@ -41,6 +41,7 @@ type Config struct {
 	VaultAddress  string
 	VaultToken    string
 	VaultPath     string
+	VaultRenewal  time.Duration
 }
 
 // Initialise prepares an instance of the app to run
@@ -85,8 +86,7 @@ func Initialise(ctx context.Context, c Config) (app *App, err error) {
 
 // Start launches the app and blocks until fatal error
 func (app *App) Start() (final error) {
-	// Renew vault token daily
-	renew := time.NewTicker(time.Hour * 24)
+	renew := time.NewTicker(app.config.VaultRenewal)
 	defer renew.Stop()
 
 	f := func() (err error) {
