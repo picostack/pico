@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
 
-	"github.com/picostack/picobot/service/secret"
+	"github.com/picostack/pico/service/secret"
 )
 
 // VaultSecrets implements a secret.Store backed by Hashicorp Vault

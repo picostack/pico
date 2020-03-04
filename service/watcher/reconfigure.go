@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/picostack/picobot/service/config"
-	"github.com/picostack/picobot/service/task"
+	"github.com/picostack/pico/service/config"
+	"github.com/picostack/pico/service/task"
 )
 
 // reconfigure will close the configuration watcher and target watcher (unless
@@ -65,7 +65,7 @@ func (w *Watcher) reconfigure() (err error) {
 }
 
 // watchConfig creates or restarts the watcher that reacts to changes to the
-// repo that contains picobot configuration scripts
+// repo that contains pico configuration scripts
 func (w *Watcher) watchConfig() (err error) {
 	if w.configWatcher != nil {
 		zap.L().Debug("closing existing watcher")

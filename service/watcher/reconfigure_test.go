@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/picostack/picobot/service/task"
+	"github.com/picostack/pico/service/task"
 )
 
 func Test_diffTargets(t *testing.T) {

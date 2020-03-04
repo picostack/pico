@@ -11,10 +11,10 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
-	"github.com/picostack/picobot/service/secret"
-	"github.com/picostack/picobot/service/secret/memory"
-	"github.com/picostack/picobot/service/secret/vault"
-	"github.com/picostack/picobot/service/watcher"
+	"github.com/picostack/pico/service/secret"
+	"github.com/picostack/pico/service/secret/memory"
+	"github.com/picostack/pico/service/secret/vault"
+	"github.com/picostack/pico/service/watcher"
 )
 
 // Config specifies static configuration parameters (from CLI or environment)

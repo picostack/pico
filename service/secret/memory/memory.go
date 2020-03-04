@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"github.com/picostack/picobot/service/secret"
+	"github.com/picostack/pico/service/secret"
 )
 
 // MemorySecrets implements a simple in-memory secret.Store for testing

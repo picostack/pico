@@ -1,4 +1,4 @@
-module github.com/picostack/picobot
+module github.com/picostack/pico
 
 go 1.13
 

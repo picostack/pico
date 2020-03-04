@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/picostack/picobot/service/task"
+	"github.com/picostack/pico/service/task"
 )
 
 // handle takes an event from gitwatch and runs the event's triggers

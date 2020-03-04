@@ -1,3 +1,3 @@
 FROM docker/compose
-COPY picobot /bin/picobot
-ENTRYPOINT ["picobot"]
+COPY pico /bin/pico
+ENTRYPOINT ["pico"]

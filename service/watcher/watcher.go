@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/Southclaws/gitwatch"
-	"github.com/picostack/picobot/service/config"
-	"github.com/picostack/picobot/service/secret"
-	"github.com/picostack/picobot/service/task"
+	"github.com/picostack/pico/service/config"
+	"github.com/picostack/pico/service/secret"
+	"github.com/picostack/pico/service/task"
 	"go.uber.org/zap"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
