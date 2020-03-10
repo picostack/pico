@@ -3,6 +3,7 @@ version: "3"
 services:
   pico:
     image: picostack/pico
+    command: run https://github.com/some_namespace/pico_configs
     environment:
       HOSTNAME: ${HOSTNAME}
       DEBUG: "1"
