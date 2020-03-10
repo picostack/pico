@@ -20,7 +20,7 @@
 .psenvrc
 
 # The binary
-picobot
+pico
 dist
 .env
 cache

@@ -1,4 +1,4 @@
-package service
+package watcher
 
 import (
 	"path/filepath"
@@ -7,12 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/picostack/picobot/service/task"
+	"github.com/picostack/pico/service/task"
 )
 
 // handle takes an event from gitwatch and runs the event's triggers
-func (app *App) handle(e gitwatch.Event) (err error) {
-	target, exists := app.getTarget(e.URL)
+func (w *Watcher) handle(e gitwatch.Event) (err error) {
+	target, exists := w.getTarget(e.URL)
 	if !exists {
 		return errors.Errorf("attempt to handle event for unknown target %s at %s", e.URL, e.Path)
 	}
@@ -20,11 +20,11 @@ func (app *App) handle(e gitwatch.Event) (err error) {
 		zap.String("target", target.Name),
 		zap.String("url", target.RepoURL),
 		zap.Time("timestamp", e.Timestamp))
-	return app.executeWithSecrets(target, e.Path, false)
+	return w.executeWithSecrets(target, e.Path, false)
 }
 
-func (app *App) executeWithSecrets(target task.Target, path string, shutdown bool) (err error) {
-	env, err := app.getSecretsForTarget(target.Name)
+func (w *Watcher) executeWithSecrets(target task.Target, path string, shutdown bool) (err error) {
+	env, err := w.secrets.GetSecretsForTarget(target.Name)
 	if err != nil {
 		return errors.Wrap(err, "failed to get secrets for target")
 	}
@@ -39,8 +39,8 @@ func (app *App) executeWithSecrets(target task.Target, path string, shutdown boo
 	return target.Execute(path, env, shutdown)
 }
 
-func (app App) getTarget(url string) (target task.Target, exists bool) {
-	for _, t := range app.targets {
+func (w Watcher) getTarget(url string) (target task.Target, exists bool) {
+	for _, t := range w.targets {
 		if t.RepoURL == url {
 			return t, true
 		}
@@ -48,12 +48,12 @@ func (app App) getTarget(url string) (target task.Target, exists bool) {
 	return
 }
 
-func (app App) executeTargets(targets []task.Target, shutdown bool) {
+func (w Watcher) executeTargets(targets []task.Target, shutdown bool) {
 	zap.L().Debug("executing all targets", zap.Bool("shutdown", shutdown))
 	for _, t := range targets {
-		err := app.executeWithSecrets(
+		err := w.executeWithSecrets(
 			t,
-			filepath.Join(app.config.Directory, t.Name),
+			filepath.Join(w.directory, t.Name),
 			shutdown,
 		)
 		if err != nil {

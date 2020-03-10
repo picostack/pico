@@ -1,8 +1,8 @@
 version: "3"
 
 services:
-  picobot:
-    image: picostack/picobot
+  pico:
+    image: picostack/pico
     environment:
       HOSTNAME: ${HOSTNAME}
       DEBUG: "1"

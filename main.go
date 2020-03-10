@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/picostack/picobot/service"
+	"github.com/picostack/pico/service"
 )
 
 var version = "master"
@@ -41,11 +41,11 @@ func init() {
 func main() {
 	app := cli.NewApp()
 
-	app.Name = "picobot"
+	app.Name = "pico"
 	app.Usage = "A git-driven task automation butler."
-	app.UsageText = `picobot [flags] [command]`
+	app.UsageText = `pico [flags] [command]`
 	app.Version = version
-	app.Description = `Picobot is a git-driven task runner to automate the application of configs.`
+	app.Description = `Pico is a git-driven task runner to automate the application of configs.`
 	app.Author = "Southclaws"
 	app.Email = "hello@southcla.ws"
 
@@ -53,9 +53,9 @@ func main() {
 		{
 			Name:    "run",
 			Aliases: []string{"r"},
-			Description: `Starts the Picobot daemon with the specified target repository. This
-repository should contain one or more configuration files for Picobot. When
-this repository has new commits, Picobot will automatically reconfigure.`,
+			Description: `Starts the Pico daemon with the specified target repository. This
+repository should contain one or more configuration files for Pico. When
+this repository has new commits, Pico will automatically reconfigure.`,
 			Usage:     "argument `target` specifies Git repository for configuration.",
 			ArgsUsage: "target",
 			Flags: []cli.Flag{
@@ -65,7 +65,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 10},
 				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR"},
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
-				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH"},
+				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH", Value: "/secret"},
 				cli.DurationFlag{Name: "vault-renew-interval", EnvVar: "VAULT_RENEW_INTERVAL", Value: time.Hour * 24},
 			},
 			Action: func(c *cli.Context) (err error) {
@@ -88,7 +88,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 
 				zap.L().Debug("initialising service")
 
-				svc, err := service.Initialise(ctx, service.Config{
+				svc, err := service.Initialise(service.Config{
 					Target:        c.Args().First(),
 					Hostname:      hostname,
 					Directory:     c.String("directory"),
@@ -106,7 +106,7 @@ this repository has new commits, Picobot will automatically reconfigure.`,
 				zap.L().Info("service initialised")
 
 				errs := make(chan error, 1)
-				go func() { errs <- svc.Start() }()
+				go func() { errs <- svc.Start(ctx) }()
 
 				s := make(chan os.Signal, 1)
 				signal.Notify(s, os.Interrupt)

@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 
-	"github.com/picostack/picobot/service/task"
+	"github.com/picostack/pico/service/task"
 )
 
 // State represents a desired system state
