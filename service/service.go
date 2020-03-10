@@ -53,6 +53,12 @@ func Initialise(c Config) (app *App, err error) {
 
 	var secretStore secret.Store
 	if c.VaultAddress != "" {
+		zap.L().Debug("connecting to vault",
+			zap.String("address", c.VaultAddress),
+			zap.String("path", c.VaultPath),
+			zap.String("token", c.VaultToken),
+			zap.Duration("renewal", c.VaultRenewal))
+
 		secretStore, err = vault.New(c.VaultAddress, c.VaultPath, c.VaultToken, c.VaultRenewal)
 		if err != nil {
 			return nil, err

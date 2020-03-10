@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/vault/api"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/picostack/pico/service/secret"
 )
@@ -46,11 +47,19 @@ func New(addr, path, token string, renewal time.Duration) (*VaultSecrets, error)
 // GetSecretsForTarget implements secret.Store
 func (v *VaultSecrets) GetSecretsForTarget(name string) (map[string]string, error) {
 	path := filepath.Join(v.path, name)
+
+	zap.L().Debug("looking for secrets in vault",
+		zap.String("name", name),
+		zap.String("path", path))
+
 	secret, err := v.client.Logical().Read(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read secret")
 	}
 	if secret == nil {
+		zap.L().Debug("did not find secrets in vault",
+			zap.String("name", name),
+			zap.String("path", path))
 		return nil, nil
 	}
 
@@ -58,6 +67,11 @@ func (v *VaultSecrets) GetSecretsForTarget(name string) (map[string]string, erro
 	for k, v := range secret.Data {
 		env[k] = v.(string)
 	}
+
+	zap.L().Debug("found secrets in vault",
+		zap.Any("secrets", env),
+		zap.Int("count", len(env)))
+
 	return env, nil
 }
 
