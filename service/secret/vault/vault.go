@@ -2,7 +2,8 @@ package vault
 
 import (
 	"context"
-	"path/filepath"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -17,36 +18,55 @@ import (
 type VaultSecrets struct {
 	client  *api.Client
 	path    string
+	version int
 	renewal time.Duration
 }
 
 var _ secret.Store = &VaultSecrets{}
 
 // New creates a new Vault client and pings the server
-func New(addr, path, token string, renewal time.Duration) (*VaultSecrets, error) {
-	client, err := api.NewClient(&api.Config{
+func New(addr, basepath, token string, renewal time.Duration) (v *VaultSecrets, err error) {
+	if strings.HasPrefix(basepath, "/") {
+		basepath = basepath[1:]
+	}
+
+	v = &VaultSecrets{
+		path:    basepath,
+		renewal: renewal,
+	}
+
+	if v.client, err = api.NewClient(&api.Config{
 		Address:    addr,
 		HttpClient: cleanhttp.DefaultClient(),
-	})
-	if err != nil {
+	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create vault client")
 	}
-	client.SetToken(token)
+	v.client.SetToken(token)
 
-	if _, err = client.Auth().Token().LookupSelf(); err != nil {
+	if _, err = v.client.Auth().Token().LookupSelf(); err != nil {
 		return nil, errors.Wrap(err, "failed to connect to vault server")
 	}
 
-	return &VaultSecrets{
-		client:  client,
-		path:    path,
-		renewal: renewal,
-	}, nil
+	enginepath := strings.Split(basepath, "/")[0]
+	if len(enginepath) == 0 {
+		enginepath = basepath
+	}
+
+	if v.version, err = getKVEngineVersion(v.client, enginepath); err != nil {
+		return nil, errors.Wrapf(err, "failed to determine KV engine version at '/%s'", enginepath)
+	}
+
+	zap.L().Debug("created new vault client for secrets engine",
+		zap.Int("kv_version", v.version),
+		zap.String("basepath", basepath),
+		zap.String("enginepath", enginepath))
+
+	return v, nil
 }
 
 // GetSecretsForTarget implements secret.Store
 func (v *VaultSecrets) GetSecretsForTarget(name string) (map[string]string, error) {
-	path := filepath.Join(v.path, name)
+	path := v.buildPath(name)
 
 	zap.L().Debug("looking for secrets in vault",
 		zap.String("name", name),
@@ -63,14 +83,13 @@ func (v *VaultSecrets) GetSecretsForTarget(name string) (map[string]string, erro
 		return nil, nil
 	}
 
-	env := make(map[string]string)
-	for k, v := range secret.Data {
-		env[k] = v.(string)
+	env, err := kvToMap(v.version, secret.Data)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unwrap secret data")
 	}
 
 	zap.L().Debug("found secrets in vault",
-		zap.Any("secrets", env),
-		zap.Int("count", len(env)))
+		zap.Any("secret", secret))
 
 	return env, nil
 }
@@ -91,4 +110,62 @@ func (v *VaultSecrets) Renew(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// builds the correct path to a secret based on the kv version
+func (v *VaultSecrets) buildPath(item string) string {
+	if v.version == 1 {
+		return path.Join(v.path, item)
+	} else {
+		return path.Join(v.path, "data", item)
+	}
+}
+
+// pulls out the kv secret data for v1 and v2 secrets
+func kvToMap(version int, data map[string]interface{}) (env map[string]string, err error) {
+	if version == 1 {
+		env = make(map[string]string)
+		for k, v := range data {
+			env[k] = v.(string)
+		}
+	} else if version == 2 {
+		env = make(map[string]string)
+		if kv, ok := data["data"].(map[string]interface{}); ok {
+			for k, v := range kv {
+				env[k] = v.(string)
+			}
+		} else {
+			return nil, errors.New("could not interpret KV v2 response data as hashtable, this is likely a change in the KV v2 API, please open an issue.")
+		}
+	} else {
+		return nil, errors.Errorf("unrecognised KV version: %d", version)
+	}
+	return
+}
+
+// because Vault has no way to know if a kv engine is v1 or v2, we have to check
+// for the /config path and if it doesn't exist, attempt to LIST the path, if
+// that succeeds, it's a v1, if it doesn't succeed, it *might still* be a v1 but
+// empty, and in that case there's no way to know so it just bails. Amazing.
+func getKVEngineVersion(client *api.Client, basepath string) (int, error) {
+	// only KV v2 has /config, /data, /metadata paths, so attempt to read one
+	s, err := client.Logical().Read(path.Join(basepath, "config"))
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to check engine config path for version query")
+	}
+	if s == nil {
+		// no /config path present, now attempt to list the engine's base path
+		l, err := client.Logical().List(path.Join(basepath))
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to list possible KV v1 engine")
+		}
+		if l == nil {
+			return 0, errors.New("could not read secrets engine, it's either an empty KV v1 engine or does not exist")
+		}
+		// engine does not have a /config but contains elements, it's a v1.
+		return 1, nil
+	}
+
+	// has a /config, it's a v2
+	return 2, nil
 }
