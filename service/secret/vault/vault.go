@@ -16,10 +16,11 @@ import (
 
 // VaultSecrets implements a secret.Store backed by Hashicorp Vault
 type VaultSecrets struct {
-	client  *api.Client
-	path    string
-	version int
-	renewal time.Duration
+	client     *api.Client
+	enginepath string
+	path       string
+	version    int
+	renewal    time.Duration
 }
 
 var _ secret.Store = &VaultSecrets{}
@@ -31,7 +32,6 @@ func New(addr, basepath, token string, renewal time.Duration) (v *VaultSecrets, 
 	}
 
 	v = &VaultSecrets{
-		path:    basepath,
 		renewal: renewal,
 	}
 
@@ -47,19 +47,17 @@ func New(addr, basepath, token string, renewal time.Duration) (v *VaultSecrets, 
 		return nil, errors.Wrap(err, "failed to connect to vault server")
 	}
 
-	enginepath := strings.Split(basepath, "/")[0]
-	if len(enginepath) == 0 {
-		enginepath = basepath
-	}
+	// engine is the first component of base, then the rest is the actual path.
+	v.enginepath, v.path = splitPath(basepath)
 
-	if v.version, err = getKVEngineVersion(v.client, enginepath); err != nil {
-		return nil, errors.Wrapf(err, "failed to determine KV engine version at '/%s'", enginepath)
+	if v.version, err = getKVEngineVersion(v.client, v.enginepath); err != nil {
+		return nil, errors.Wrapf(err, "failed to determine KV engine version at '/%s'", v.enginepath)
 	}
 
 	zap.L().Debug("created new vault client for secrets engine",
 		zap.Int("kv_version", v.version),
 		zap.String("basepath", basepath),
-		zap.String("enginepath", enginepath))
+		zap.String("enginepath", v.enginepath))
 
 	return v, nil
 }
@@ -112,13 +110,24 @@ func (v *VaultSecrets) Renew(ctx context.Context) error {
 	return nil
 }
 
+func splitPath(basepath string) (string, string) {
+	basepath = strings.Trim(basepath, "/")
+	s := strings.SplitN(basepath, "/", 2)
+	if len(s[0]) == 0 {
+		return basepath, "/"
+	} else if len(s) == 1 {
+		return basepath, "/"
+	}
+	return s[0], s[1]
+}
+
 // builds the correct path to a secret based on the kv version
 func (v *VaultSecrets) buildPath(item string) string {
 	if v.version == 1 {
-		return path.Join(v.path, item)
-	} else {
-		return path.Join(v.path, "data", item)
+		path.Split(v.path)
+		return path.Join(v.enginepath, v.path, item)
 	}
+	return path.Join(v.enginepath, "data", v.path, item)
 }
 
 // pulls out the kv secret data for v1 and v2 secrets
@@ -126,16 +135,16 @@ func kvToMap(version int, data map[string]interface{}) (env map[string]string, e
 	if version == 1 {
 		env = make(map[string]string)
 		for k, v := range data {
-			env[k] = v.(string)
+			env[k] = v.(string) //nolint:err - we know it's a string already
 		}
 	} else if version == 2 {
 		env = make(map[string]string)
 		if kv, ok := data["data"].(map[string]interface{}); ok {
 			for k, v := range kv {
-				env[k] = v.(string)
+				env[k] = v.(string) //nolint:err - we know it's a string already
 			}
 		} else {
-			return nil, errors.New("could not interpret KV v2 response data as hashtable, this is likely a change in the KV v2 API, please open an issue.")
+			return nil, errors.New("could not interpret KV v2 response data as hashtable, this is likely a change in the KV v2 API, please open an issue")
 		}
 	} else {
 		return nil, errors.Errorf("unrecognised KV version: %d", version)
