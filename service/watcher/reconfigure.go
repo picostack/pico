@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"reflect"
 
 	"github.com/Southclaws/gitwatch"
 	"github.com/pkg/errors"
@@ -46,7 +45,7 @@ func (w *Watcher) reconfigure() (err error) {
 	}
 
 	// diff targets
-	additions, removals := diffTargets(w.targets, state.Targets)
+	additions, removals := task.DiffTargets(w.targets, state.Targets)
 	w.targets = state.Targets
 
 	err = w.watchTargets()
@@ -155,39 +154,6 @@ func getNewState(path, hostname string, fallback config.State) (state config.Sta
 	} else {
 		zap.L().Debug("constructed desired state",
 			zap.Int("targets", len(state.Targets)))
-	}
-	return
-}
-
-// diffTargets returns just the additions (also changes) and removals between
-// the specified old targets and new targets
-func diffTargets(oldTargets, newTargets []task.Target) (additions, removals []task.Target) {
-	for _, newTarget := range newTargets {
-		var exists bool
-		for _, oldTarget := range oldTargets {
-			if oldTarget.Name == newTarget.Name {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			additions = append(additions, newTarget)
-		}
-	}
-	for _, oldTarget := range oldTargets {
-		var exists bool
-		var newTarget task.Target
-		for _, newTarget = range newTargets {
-			if newTarget.Name == oldTarget.Name {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			removals = append(removals, oldTarget)
-		} else if !reflect.DeepEqual(oldTarget, newTarget) {
-			additions = append(additions, newTarget)
-		}
 	}
 	return
 }
