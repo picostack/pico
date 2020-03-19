@@ -112,7 +112,7 @@ func (p *GitProvider) watchConfig() (err error) {
 	go func() {
 		e := p.configWatcher.Run()
 		if e != nil && !errors.Is(e, context.Canceled) {
-			zap.L().Error("config watcher failed")
+			zap.L().Error("config watcher failed", zap.Error(e))
 		}
 	}()
 	zap.L().Debug("created new config watcher, awaiting setup")

@@ -27,7 +27,6 @@ type GitWatcher struct {
 	ssh           transport.AuthMethod
 
 	targetsWatcher *gitwatch.Session
-	targets        []task.Target
 	state          config.State
 
 	initialised bool
@@ -101,7 +100,8 @@ func (w *GitWatcher) Start() error {
 //   - executs the necessary targets - first shut down old ones, then create new
 //   - sets the watcher state field to the new state
 func (w *GitWatcher) doReconfigure(newState config.State) error {
-	additions, removals := task.DiffTargets(w.targets, newState.Targets)
+	additions, removals := task.DiffTargets(w.state.Targets, newState.Targets)
+	w.state = newState
 
 	err := w.watchTargets()
 	if err != nil {
@@ -111,8 +111,6 @@ func (w *GitWatcher) doReconfigure(newState config.State) error {
 	// out with the old, in with the new!
 	w.executeTargets(removals, true)
 	w.executeTargets(additions, false)
-
-	w.state = newState
 
 	return nil
 }
@@ -146,8 +144,9 @@ func (w *GitWatcher) GetState() config.State {
 
 // watchTargets creates or restarts the targets watcher.
 func (w *GitWatcher) watchTargets() (err error) {
-	targetRepos := make([]gitwatch.Repository, len(w.targets))
-	for i, t := range w.targets {
+	fmt.Println(w.state.Targets)
+	targetRepos := make([]gitwatch.Repository, len(w.state.Targets))
+	for i, t := range w.state.Targets {
 		dir := t.Name
 		if t.Branch != "" {
 			dir = fmt.Sprintf("%s_%s", t.Name, t.Branch)
@@ -203,7 +202,10 @@ func (w *GitWatcher) handle(e gitwatch.Event) (err error) {
 }
 
 func (w GitWatcher) executeTargets(targets []task.Target, shutdown bool) {
-	zap.L().Debug("executing all targets", zap.Bool("shutdown", shutdown))
+	zap.L().Debug("executing all targets",
+		zap.Bool("shutdown", shutdown),
+		zap.Int("targets", len(targets)))
+
 	for _, t := range targets {
 		w.send(t, filepath.Join(w.directory, t.Name), shutdown)
 	}
@@ -211,7 +213,7 @@ func (w GitWatcher) executeTargets(targets []task.Target, shutdown bool) {
 }
 
 func (w GitWatcher) getTarget(url string) (target task.Target, exists bool) {
-	for _, t := range w.targets {
+	for _, t := range w.state.Targets {
 		if t.RepoURL == url {
 			return t, true
 		}
