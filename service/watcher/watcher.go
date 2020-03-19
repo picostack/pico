@@ -12,7 +12,22 @@ import (
 	"github.com/picostack/pico/service/task"
 )
 
-// Watcher handles Git events and dispatches config or task execution events.
+// Watcher is responsible for a number of things, it's quite a large system (the
+// largest in the entire codebase!) and is quite tightly coupled for various
+// reasons.
+//
+// It is in charge of:
+//   - storing the configuration state
+//   - watching for configuration state changes (hence the name)
+//   - reacting to configuration changes by rebooting itself with the new state
+//   - dispatching events for targets when their repositories receive commits
+//
+// The reactive code for executing targets is separated by an event bus.
+// Unfortunately, because this system holds the configuration state, the same
+// approach can't be applied to configuration state change events - the system
+// itself reacts to those events so it can reconfigure itself. *That* is why it
+// has such a large structure with so much state.
+//
 type Watcher struct {
 	bus           chan task.ExecutionTask
 	hostname      string
