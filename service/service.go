@@ -104,15 +104,23 @@ func (app *App) Start(ctx context.Context) error {
 
 	zap.L().Debug("starting service daemon")
 
+	// TODO: Replace this errgroup with a more resilient solution.
+	// Not all of these tasks fail in the same way. Some don't fail at all.
+	// This needs to be rewritten to be more considerate of different failure
+	// states and potentially retry in some circumstances. Pico should be the
+	// kind of service that barely goes down, only when absolutely necessary.
+
 	ce := executor.NewCommandExecutor(app.secrets)
 	g.Go(func() error {
-		return ce.Subscribe(app.bus)
+		ce.Subscribe(app.bus)
+		return nil
 	})
 
+	// TODO: gw can fail when setting up the gitwatch instance, it should retry.
 	gw := app.watcher.(*watcher.GitWatcher)
 	g.Go(gw.Start)
 
-	// start the reconfigurer
+	// TODO: reconfigurer can also fail when setting up gitwatch.
 	g.Go(func() error {
 		return app.reconfigurer.Configure(app.watcher)
 	})

@@ -23,13 +23,16 @@ func NewCommandExecutor(secrets secret.Store) CommandExecutor {
 }
 
 // Subscribe implements executor.Executor
-func (e *CommandExecutor) Subscribe(bus chan task.ExecutionTask) error {
+func (e *CommandExecutor) Subscribe(bus chan task.ExecutionTask) {
 	for t := range bus {
 		if err := e.execute(t.Target, t.Path, t.Shutdown); err != nil {
-			return err
+			zap.L().Error("executor task unsuccessful",
+				zap.String("target", t.Target.Name),
+				zap.Bool("shutdown", t.Shutdown),
+				zap.Error(err))
 		}
 	}
-	return nil
+	return
 }
 
 func (e *CommandExecutor) execute(
