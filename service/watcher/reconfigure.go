@@ -2,6 +2,7 @@ package watcher
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"reflect"
 
@@ -101,11 +102,15 @@ func (w *Watcher) watchConfig() (err error) {
 func (w *Watcher) watchTargets() (err error) {
 	targetRepos := make([]gitwatch.Repository, len(w.targets))
 	for i, t := range w.targets {
-		zap.L().Debug("assigned target", zap.String("url", t.RepoURL))
+		dir := t.Name
+		if t.Branch != "" {
+			dir = fmt.Sprintf("%s_%s", t.Name, t.Branch)
+		}
+		zap.L().Debug("assigned target", zap.String("url", t.RepoURL), zap.String("directory", dir))
 		targetRepos[i] = gitwatch.Repository{
 			URL:       t.RepoURL,
 			Branch:    t.Branch,
-			Directory: t.Name,
+			Directory: dir,
 		}
 	}
 
