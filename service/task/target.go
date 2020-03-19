@@ -84,7 +84,6 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 
 	zap.L().Debug("executing target command",
 		zap.String("command", command[0]),
-		zap.Strings("env", cmd.Env),
 		zap.Strings("args", command[1:]))
 
 	return cmd.Run()
