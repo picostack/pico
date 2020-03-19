@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/Southclaws/gitwatch"
-	"github.com/picostack/pico/service/config"
-	"github.com/picostack/pico/service/secret"
-	"github.com/picostack/pico/service/task"
 	"go.uber.org/zap"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+
+	"github.com/picostack/pico/service/config"
+	"github.com/picostack/pico/service/task"
 )
 
 // Watcher handles Git events and dispatches config or task execution events.
 type Watcher struct {
-	secrets       secret.Store
+	bus           chan task.ExecutionTask
 	hostname      string
 	directory     string
 	configRepo    string
@@ -32,7 +32,7 @@ type Watcher struct {
 
 // New creates a new watcher with all necessary parameters
 func New(
-	secrets secret.Store,
+	bus chan task.ExecutionTask,
 	hostname string,
 	directory string,
 	configRepo string,
@@ -40,7 +40,7 @@ func New(
 	ssh transport.AuthMethod,
 ) *Watcher {
 	return &Watcher{
-		secrets:       secrets,
+		bus:           bus,
 		hostname:      hostname,
 		directory:     directory,
 		configRepo:    configRepo,
@@ -51,6 +51,7 @@ func New(
 	}
 }
 
+// Start runs the watcher and blocks until a fatal error occurs
 func (w *Watcher) Start() error {
 	if err := w.reconfigure(); err != nil {
 		return err

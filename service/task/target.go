@@ -9,6 +9,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// ExecutionTask encodes a Target with additional execution-time information.
+type ExecutionTask struct {
+	Target   Target
+	Path     string
+	Shutdown bool
+}
+
 // Targets is just a list of target objects, to implement the Sort interface
 type Targets []Target
 

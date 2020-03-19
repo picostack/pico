@@ -11,9 +11,11 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
+	"github.com/picostack/pico/service/executor"
 	"github.com/picostack/pico/service/secret"
 	"github.com/picostack/pico/service/secret/memory"
 	"github.com/picostack/pico/service/secret/vault"
+	"github.com/picostack/pico/service/task"
 	"github.com/picostack/pico/service/watcher"
 )
 
@@ -71,8 +73,12 @@ func Initialise(c Config) (app *App, err error) {
 
 	app.secrets = secretStore
 
+	bus := make(chan task.ExecutionTask, 100)
+	ce := executor.NewCommandExecutor(secretStore)
+	ce.Subscribe(bus)
+
 	app.watcher = watcher.New(
-		secretStore,
+		bus,
 		c.Hostname,
 		c.Directory,
 		c.Target,

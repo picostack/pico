@@ -20,23 +20,16 @@ func (w *Watcher) handle(e gitwatch.Event) (err error) {
 		zap.String("target", target.Name),
 		zap.String("url", target.RepoURL),
 		zap.Time("timestamp", e.Timestamp))
-	return w.executeWithSecrets(target, e.Path, false)
+	w.send(target, e.Path, false)
+	return nil
 }
 
-func (w *Watcher) executeWithSecrets(target task.Target, path string, shutdown bool) (err error) {
-	env, err := w.secrets.GetSecretsForTarget(target.Name)
-	if err != nil {
-		return errors.Wrap(err, "failed to get secrets for target")
+func (w Watcher) executeTargets(targets []task.Target, shutdown bool) {
+	zap.L().Debug("executing all targets", zap.Bool("shutdown", shutdown))
+	for _, t := range targets {
+		w.send(t, filepath.Join(w.directory, t.Name), shutdown)
 	}
-
-	zap.L().Debug("executing with secrets",
-		zap.String("target", target.Name),
-		zap.Strings("cmd", target.Up),
-		zap.String("url", target.RepoURL),
-		zap.String("dir", path),
-		zap.Int("secrets", len(env)))
-
-	return target.Execute(path, env, shutdown)
+	return
 }
 
 func (w Watcher) getTarget(url string) (target task.Target, exists bool) {
@@ -48,19 +41,10 @@ func (w Watcher) getTarget(url string) (target task.Target, exists bool) {
 	return
 }
 
-func (w Watcher) executeTargets(targets []task.Target, shutdown bool) {
-	zap.L().Debug("executing all targets", zap.Bool("shutdown", shutdown))
-	for _, t := range targets {
-		err := w.executeWithSecrets(
-			t,
-			filepath.Join(w.directory, t.Name),
-			shutdown,
-		)
-		if err != nil {
-			zap.L().Error("failed to execute task after reconfigure",
-				zap.Error(errors.Cause(err)))
-			continue
-		}
+func (w Watcher) send(target task.Target, path string, shutdown bool) {
+	w.bus <- task.ExecutionTask{
+		Target:   target,
+		Path:     path,
+		Shutdown: shutdown,
 	}
-	return
 }
