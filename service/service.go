@@ -12,6 +12,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
 	"github.com/picostack/pico/service/executor"
+	"github.com/picostack/pico/service/reconfigurer"
 	"github.com/picostack/pico/service/secret"
 	"github.com/picostack/pico/service/secret/memory"
 	"github.com/picostack/pico/service/secret/vault"
@@ -34,10 +35,11 @@ type Config struct {
 
 // App stores application state
 type App struct {
-	config  Config
-	watcher *watcher.Watcher
-	secrets secret.Store
-	bus     chan task.ExecutionTask
+	config       Config
+	reconfigurer reconfigurer.Provider
+	watcher      watcher.Watcher
+	secrets      secret.Store
+	bus          chan task.ExecutionTask
 }
 
 // Initialise prepares an instance of the app to run
@@ -76,12 +78,20 @@ func Initialise(c Config) (app *App, err error) {
 
 	app.bus = make(chan task.ExecutionTask, 100)
 
-	app.watcher = watcher.New(
-		app.bus,
-		c.Hostname,
+	// reconfigurer
+	app.reconfigurer = reconfigurer.New(
 		c.Directory,
+		c.Hostname,
 		c.Target,
 		c.CheckInterval,
+		authMethod,
+	)
+
+	// target watcher
+	app.watcher = watcher.NewGitWatcher(
+		app.config.Directory,
+		app.bus,
+		app.config.CheckInterval,
 		authMethod,
 	)
 
@@ -99,7 +109,13 @@ func (app *App) Start(ctx context.Context) error {
 		return ce.Subscribe(app.bus)
 	})
 
-	g.Go(app.watcher.Start)
+	gw := app.watcher.(*watcher.GitWatcher)
+	g.Go(gw.Start)
+
+	// start the reconfigurer
+	g.Go(func() error {
+		return app.reconfigurer.Configure(app.watcher)
+	})
 
 	if s, ok := app.secrets.(*vault.VaultSecrets); ok {
 		g.Go(func() error {
