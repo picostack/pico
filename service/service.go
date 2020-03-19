@@ -37,6 +37,7 @@ type App struct {
 	config  Config
 	watcher *watcher.Watcher
 	secrets secret.Store
+	bus     chan task.ExecutionTask
 }
 
 // Initialise prepares an instance of the app to run
@@ -73,12 +74,10 @@ func Initialise(c Config) (app *App, err error) {
 
 	app.secrets = secretStore
 
-	bus := make(chan task.ExecutionTask, 100)
-	ce := executor.NewCommandExecutor(secretStore)
-	ce.Subscribe(bus)
+	app.bus = make(chan task.ExecutionTask, 100)
 
 	app.watcher = watcher.New(
-		bus,
+		app.bus,
 		c.Hostname,
 		c.Directory,
 		c.Target,
@@ -94,6 +93,11 @@ func (app *App) Start(ctx context.Context) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	zap.L().Debug("starting service daemon")
+
+	ce := executor.NewCommandExecutor(app.secrets)
+	g.Go(func() error {
+		return ce.Subscribe(app.bus)
+	})
 
 	g.Go(app.watcher.Start)
 
