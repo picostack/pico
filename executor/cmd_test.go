@@ -10,6 +10,8 @@ import (
 	"github.com/picostack/pico/executor"
 	"github.com/picostack/pico/secret/memory"
 	"github.com/picostack/pico/task"
+
+	_ "github.com/picostack/pico/logger"
 )
 
 func TestMain(m *testing.M) {

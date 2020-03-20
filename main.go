@@ -4,39 +4,18 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
+	_ "github.com/picostack/pico/logger"
 	"github.com/picostack/pico/service"
 )
 
 var version = "master"
-
-func init() {
-	// constructs a logger and replaces the default global logger
-	var config zap.Config
-	if d, e := strconv.ParseBool(os.Getenv("DEVELOPMENT")); d && e == nil {
-		config = zap.NewDevelopmentConfig()
-	} else {
-		config = zap.NewProductionConfig()
-	}
-	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	config.DisableStacktrace = true
-	if d, e := strconv.ParseBool(os.Getenv("DEBUG")); d && e == nil {
-		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	}
-	logger, err := config.Build()
-	if err != nil {
-		panic(err)
-	}
-	zap.ReplaceGlobals(logger)
-}
 
 func main() {
 	app := cli.NewApp()

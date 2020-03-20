@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/picostack/pico/task"
+
+	_ "github.com/picostack/pico/logger"
 )
 
 var w *GitWatcher
 var bus chan task.ExecutionTask
 
 func TestMain(m *testing.M) {
-	os.Setenv("DEBUG", "1")
 	bus = make(chan task.ExecutionTask, 16)
 	w = NewGitWatcher(".test", bus, time.Second, nil)
 
