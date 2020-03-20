@@ -18,7 +18,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandExecutor(t *testing.T) {
-	ce := executor.NewCommandExecutor(&memory.MemorySecrets{})
+	ce := executor.NewCommandExecutor(&memory.MemorySecrets{
+		Secrets: map[string]string{
+			"SOME_SECRET": "123",
+		},
+	})
 	bus := make(chan task.ExecutionTask)
 
 	g := errgroup.Group{}
@@ -27,7 +31,7 @@ func TestCommandExecutor(t *testing.T) {
 		bus <- task.ExecutionTask{
 			Target: task.Target{
 				Name: "test_executor",
-				Up:   []string{"touch", "01"},
+				Up:   []string{"git", "init"},
 			},
 			Path: "./.test",
 		}
@@ -43,7 +47,9 @@ func TestCommandExecutor(t *testing.T) {
 	// wait for the task to be consumed and executed
 	time.Sleep(time.Second)
 
-	if _, err := os.Stat(".test/01"); err == os.ErrNotExist {
-		t.Error("expected file .test/01 to exist:", err)
+	if _, err := os.Stat(".test/.git"); err != nil {
+		t.Error("expected path .test/.git to exist:", err)
 	}
+
+	os.RemoveAll(".test/.git")
 }
