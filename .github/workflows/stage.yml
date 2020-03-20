@@ -26,6 +26,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build Staging
+        run: go build
+
       - name: Publish
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
