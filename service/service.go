@@ -1,3 +1,6 @@
+// Package service provides the runnable service that acts as the root of the
+// overall system. It provides a configuration structure, a way to initialise a
+// primed instance of the service which can then be start via the .Start() func.
 package service
 
 import (
