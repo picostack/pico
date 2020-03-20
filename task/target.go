@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-
-	"go.uber.org/zap"
 )
 
 // ExecutionTask encodes a Target with additional execution-time information.
@@ -82,10 +80,6 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}
-
-	zap.L().Debug("executing target command",
-		zap.String("command", command[0]),
-		zap.Strings("args", command[1:]))
 
 	return cmd.Run()
 }
