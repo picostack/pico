@@ -1,12 +1,12 @@
-name: Deploy
+name: Stage
 
 on:
   push:
     branches: [staging]
 
 jobs:
-  deploy:
-    name: goreleaser
+  stage:
+    name: stage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v1

@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    name: goreleaser
+    name: deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v1
