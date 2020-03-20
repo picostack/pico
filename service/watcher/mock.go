@@ -10,6 +10,7 @@ type MockWatcher struct {
 
 func (m *MockWatcher) SetState(s config.State) error {
 	m.state = s
+	return nil
 }
 func (m *MockWatcher) GetState() config.State {
 	return m.state

@@ -209,7 +209,6 @@ func (w GitWatcher) executeTargets(targets []task.Target, shutdown bool) {
 	for _, t := range targets {
 		w.send(t, filepath.Join(w.directory, t.Name), shutdown)
 	}
-	return
 }
 
 func (w GitWatcher) getTarget(url string) (target task.Target, exists bool) {

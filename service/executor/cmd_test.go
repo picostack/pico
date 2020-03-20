@@ -13,7 +13,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	os.Mkdir(".test", os.ModePerm)
+	os.Mkdir(".test", os.ModePerm) //nolint:errcheck
 	os.Exit(m.Run())
 }
 
