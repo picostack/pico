@@ -1,3 +1,9 @@
+// Package config defines a configuration engine based on JavaScript. A
+// configuration is built from a set of JavaScript source files and executed
+// to generate a state object, which is provided to components such as the
+// reconfigurer for resolving state changes. JavaScript is used so certain
+// common expressions can be re-used, or targets can be conditionally resolved
+// based on input variables such as the machine's hostname.
 package config
 
 import (
