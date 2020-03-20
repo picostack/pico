@@ -30,8 +30,10 @@ jobs:
         run: go build
 
       - name: Publish
-        uses: elgohr/Publish-Docker-Github-Action@master
+        uses: docker/build-action@v1
         with:
-          name: picostack/pico
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: picostack/pico
+          tags: staging
+          tag_with_sha: true
