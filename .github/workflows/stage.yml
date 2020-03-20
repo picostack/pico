@@ -27,7 +27,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Staging
-        run: go build
+        run: go build -ldflags="-w -s"
+        env:
+          CGO_ENABLED: "0"
+          GOOS: linux
+          GOARCH: amd64
 
       - name: Publish
         uses: docker/build-push-action@v1
