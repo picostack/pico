@@ -1,0 +1,21 @@
+name: Go
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v1
+      - uses: actions/checkout@v2
+
+      - name: Get
+        run: go get -v -t -d
+
+      - name: Test
+        run: go test -v ./...

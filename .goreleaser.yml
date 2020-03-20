@@ -13,7 +13,7 @@ builds:
 checksum:
   name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: "SNAPSHOT-{{ .ShortCommit }}"
 changelog:
   sort: asc
   filters:
@@ -25,6 +25,7 @@ dockers:
       - picostack/pico:{{ .Tag }}
       - picostack/pico:v{{ .Major }}
       - picostack/pico:v{{ .Major }}.{{ .Minor }}
+      - picostack/pico:{{ .ShortCommit }}
       - picostack/pico:latest
 nfpms:
   - vendor: Southclaws

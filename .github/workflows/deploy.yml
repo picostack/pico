@@ -1,0 +1,26 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+    tags:
+      - "*"
+
+jobs:
+  deploy:
+    name: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v1
+      - uses: actions/checkout@v2
+
+      - name: Test
+        run: go test -v ./...
+
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v1
+        with:
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
