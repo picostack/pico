@@ -15,6 +15,13 @@ type ExecutionTask struct {
 	Env      map[string]string
 }
 
+// Repo represents a Git repo with credentials
+type Repo struct {
+	URL  string
+	User string
+	Pass string
+}
+
 // Targets is just a list of target objects, to implement the Sort interface
 type Targets []Target
 

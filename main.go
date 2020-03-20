@@ -13,6 +13,7 @@ import (
 
 	_ "github.com/picostack/pico/logger"
 	"github.com/picostack/pico/service"
+	"github.com/picostack/pico/task"
 )
 
 var version = "master"
@@ -38,6 +39,8 @@ this repository has new commits, Pico will automatically reconfigure.`,
 			Usage:     "argument `target` specifies Git repository for configuration.",
 			ArgsUsage: "target",
 			Flags: []cli.Flag{
+				cli.StringFlag{Name: "git-username", EnvVar: "GIT_USERNAME"},
+				cli.StringFlag{Name: "git-password", EnvVar: "GIT_PASSWORD"},
 				cli.StringFlag{Name: "hostname", EnvVar: "HOSTNAME"},
 				cli.StringFlag{Name: "directory", EnvVar: "DIRECTORY", Value: "./cache/"},
 				cli.BoolFlag{Name: "ssh", EnvVar: "SSH"},
@@ -68,7 +71,11 @@ this repository has new commits, Pico will automatically reconfigure.`,
 				zap.L().Debug("initialising service")
 
 				svc, err := service.Initialise(service.Config{
-					Target:        c.Args().First(),
+					Target: task.Repo{
+						URL:  c.Args().First(),
+						User: c.String("git-username"),
+						Pass: c.String("git-password"),
+					},
 					Hostname:      hostname,
 					Directory:     c.String("directory"),
 					SSH:           c.Bool("ssh"),

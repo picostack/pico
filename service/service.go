@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
 	"github.com/picostack/pico/executor"
@@ -25,7 +26,7 @@ import (
 
 // Config specifies static configuration parameters (from CLI or environment)
 type Config struct {
-	Target        string
+	Target        task.Repo
 	Hostname      string
 	SSH           bool
 	Directory     string
@@ -57,6 +58,11 @@ func Initialise(c Config) (app *App, err error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to set up SSH authentication")
 		}
+	} else if c.Target.User != "" {
+		authMethod = &http.BasicAuth{
+			Username: c.Target.User,
+			Password: c.Target.Pass,
+		}
 	}
 
 	var secretStore secret.Store
@@ -85,7 +91,7 @@ func Initialise(c Config) (app *App, err error) {
 	app.reconfigurer = reconfigurer.New(
 		c.Directory,
 		c.Hostname,
-		c.Target,
+		c.Target.URL,
 		c.CheckInterval,
 		authMethod,
 	)

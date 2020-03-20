@@ -23,7 +23,7 @@ type GitProvider struct {
 	hostname      string
 	configRepo    string
 	checkInterval time.Duration
-	ssh           transport.AuthMethod
+	authMethod    transport.AuthMethod
 
 	configWatcher *gitwatch.Session
 }
@@ -34,14 +34,14 @@ func New(
 	hostname string,
 	configRepo string,
 	checkInterval time.Duration,
-	ssh transport.AuthMethod,
+	authMethod transport.AuthMethod,
 ) *GitProvider {
 	return &GitProvider{
 		directory:     directory,
 		hostname:      hostname,
 		configRepo:    configRepo,
 		checkInterval: checkInterval,
-		ssh:           ssh,
+		authMethod:    authMethod,
 	}
 }
 
@@ -104,7 +104,7 @@ func (p *GitProvider) watchConfig() (err error) {
 		[]gitwatch.Repository{{URL: p.configRepo}},
 		p.checkInterval,
 		p.directory,
-		p.ssh,
+		p.authMethod,
 		false)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch config target")
