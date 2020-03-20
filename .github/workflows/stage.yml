@@ -27,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Staging
-        run: go build
+        run: go build -ldflags="-w -s"
 
       - name: Publish
         uses: docker/build-push-action@v1
