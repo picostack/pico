@@ -24,3 +24,5 @@ pico
 dist
 .env
 cache
+
+*/.test/

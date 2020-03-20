@@ -9,6 +9,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// ExecutionTask encodes a Target with additional execution-time information.
+type ExecutionTask struct {
+	Target   Target
+	Path     string
+	Shutdown bool
+	Env      map[string]string
+}
+
 // Targets is just a list of target objects, to implement the Sort interface
 type Targets []Target
 
@@ -77,7 +85,6 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 
 	zap.L().Debug("executing target command",
 		zap.String("command", command[0]),
-		zap.Strings("env", cmd.Env),
 		zap.Strings("args", command[1:]))
 
 	return cmd.Run()

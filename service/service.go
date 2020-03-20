@@ -11,9 +11,12 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
+	"github.com/picostack/pico/service/executor"
+	"github.com/picostack/pico/service/reconfigurer"
 	"github.com/picostack/pico/service/secret"
 	"github.com/picostack/pico/service/secret/memory"
 	"github.com/picostack/pico/service/secret/vault"
+	"github.com/picostack/pico/service/task"
 	"github.com/picostack/pico/service/watcher"
 )
 
@@ -32,9 +35,11 @@ type Config struct {
 
 // App stores application state
 type App struct {
-	config  Config
-	watcher *watcher.Watcher
-	secrets secret.Store
+	config       Config
+	reconfigurer reconfigurer.Provider
+	watcher      watcher.Watcher
+	secrets      secret.Store
+	bus          chan task.ExecutionTask
 }
 
 // Initialise prepares an instance of the app to run
@@ -71,12 +76,22 @@ func Initialise(c Config) (app *App, err error) {
 
 	app.secrets = secretStore
 
-	app.watcher = watcher.New(
-		secretStore,
-		c.Hostname,
+	app.bus = make(chan task.ExecutionTask, 100)
+
+	// reconfigurer
+	app.reconfigurer = reconfigurer.New(
 		c.Directory,
+		c.Hostname,
 		c.Target,
 		c.CheckInterval,
+		authMethod,
+	)
+
+	// target watcher
+	app.watcher = watcher.NewGitWatcher(
+		app.config.Directory,
+		app.bus,
+		app.config.CheckInterval,
 		authMethod,
 	)
 
@@ -89,7 +104,26 @@ func (app *App) Start(ctx context.Context) error {
 
 	zap.L().Debug("starting service daemon")
 
-	g.Go(app.watcher.Start)
+	// TODO: Replace this errgroup with a more resilient solution.
+	// Not all of these tasks fail in the same way. Some don't fail at all.
+	// This needs to be rewritten to be more considerate of different failure
+	// states and potentially retry in some circumstances. Pico should be the
+	// kind of service that barely goes down, only when absolutely necessary.
+
+	ce := executor.NewCommandExecutor(app.secrets)
+	g.Go(func() error {
+		ce.Subscribe(app.bus)
+		return nil
+	})
+
+	// TODO: gw can fail when setting up the gitwatch instance, it should retry.
+	gw := app.watcher.(*watcher.GitWatcher)
+	g.Go(gw.Start)
+
+	// TODO: reconfigurer can also fail when setting up gitwatch.
+	g.Go(func() error {
+		return app.reconfigurer.Configure(app.watcher)
+	})
 
 	if s, ok := app.secrets.(*vault.VaultSecrets); ok {
 		g.Go(func() error {

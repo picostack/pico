@@ -1,32 +1,30 @@
-package watcher
+package task
 
 import (
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/picostack/pico/service/task"
 )
 
-func Test_diffTargets(t *testing.T) {
+func Test_DiffTargets(t *testing.T) {
 	type args struct {
-		oldTargets []task.Target
-		newTargets []task.Target
+		oldTargets []Target
+		newTargets []Target
 	}
 	tests := []struct {
 		args          args
-		wantAdditions []task.Target
-		wantRemovals  []task.Target
+		wantAdditions []Target
+		wantRemovals  []Target
 	}{
 		{
 			args{
-				oldTargets: []task.Target{
+				oldTargets: []Target{
 					{Name: "one"},
 					{Name: "two"},
 					{Name: "three"},
 				},
-				newTargets: []task.Target{
+				newTargets: []Target{
 					{Name: "one"},
 					{Name: "two"},
 					{Name: "three"},
@@ -37,14 +35,14 @@ func Test_diffTargets(t *testing.T) {
 		},
 		{
 			args{
-				oldTargets: []task.Target{},
-				newTargets: []task.Target{
+				oldTargets: []Target{},
+				newTargets: []Target{
 					{Name: "one"},
 					{Name: "two"},
 					{Name: "three"},
 				},
 			},
-			[]task.Target{
+			[]Target{
 				{Name: "one"},
 				{Name: "two"},
 				{Name: "three"},
@@ -53,15 +51,15 @@ func Test_diffTargets(t *testing.T) {
 		},
 		{
 			args{
-				oldTargets: []task.Target{
+				oldTargets: []Target{
 					{Name: "one"},
 					{Name: "two"},
 					{Name: "three"},
 				},
-				newTargets: []task.Target{},
+				newTargets: []Target{},
 			},
 			nil,
-			[]task.Target{
+			[]Target{
 				{Name: "one"},
 				{Name: "two"},
 				{Name: "three"},
@@ -69,52 +67,52 @@ func Test_diffTargets(t *testing.T) {
 		},
 		{
 			args{
-				oldTargets: []task.Target{
+				oldTargets: []Target{
 					{Name: "one"},
 					{Name: "two"},
 					{Name: "three"},
 				},
-				newTargets: []task.Target{
+				newTargets: []Target{
 					{Name: "one"},
 					{Name: "three"},
 				},
 			},
 			nil,
-			[]task.Target{
+			[]Target{
 				{Name: "two"},
 			},
 		},
 		{
 			args{
-				oldTargets: []task.Target{
+				oldTargets: []Target{
 					{Name: "one"},
 					{Name: "three"},
 				},
-				newTargets: []task.Target{
+				newTargets: []Target{
 					{Name: "one"},
 					{Name: "two"},
 					{Name: "three"},
 				},
 			},
-			[]task.Target{
+			[]Target{
 				{Name: "two"},
 			},
 			nil,
 		},
 		{
 			args{
-				oldTargets: []task.Target{
+				oldTargets: []Target{
 					{Name: "one"},
 					{Name: "two", RepoURL: "123"},
 					{Name: "three"},
 				},
-				newTargets: []task.Target{
+				newTargets: []Target{
 					{Name: "one"},
 					{Name: "two", RepoURL: "312"},
 					{Name: "three"},
 				},
 			},
-			[]task.Target{
+			[]Target{
 				{Name: "two", RepoURL: "312"},
 			},
 			nil,
@@ -122,7 +120,7 @@ func Test_diffTargets(t *testing.T) {
 	}
 	for ii, tt := range tests {
 		t.Run(fmt.Sprint(ii), func(t *testing.T) {
-			gotAdditions, gotRemovals := diffTargets(tt.args.oldTargets, tt.args.newTargets)
+			gotAdditions, gotRemovals := DiffTargets(tt.args.oldTargets, tt.args.newTargets)
 			assert.Equal(t, tt.wantAdditions, gotAdditions, "additions mismatch")
 			assert.Equal(t, tt.wantRemovals, gotRemovals, "removals mismatch")
 		})
