@@ -12,7 +12,7 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.14.1
-      - uses: actions/setup-go@v2-beta
+      - uses: actions/setup-go@v1
       - run: go get -v -t -d
 
       - name: Test
