@@ -27,7 +27,7 @@ import (
 type Config struct {
 	Target        string
 	Hostname      string
-	NoSSH         bool
+	SSH           bool
 	Directory     string
 	CheckInterval time.Duration
 	VaultAddress  string
@@ -52,7 +52,7 @@ func Initialise(c Config) (app *App, err error) {
 	app.config = c
 
 	var authMethod transport.AuthMethod
-	if !c.NoSSH {
+	if c.SSH {
 		authMethod, err = ssh.NewSSHAgentAuth("git")
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to set up SSH authentication")
