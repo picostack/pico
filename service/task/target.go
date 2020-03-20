@@ -14,6 +14,7 @@ type ExecutionTask struct {
 	Target   Target
 	Path     string
 	Shutdown bool
+	Env      map[string]string
 }
 
 // Targets is just a list of target objects, to implement the Sort interface

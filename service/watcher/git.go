@@ -144,7 +144,6 @@ func (w *GitWatcher) GetState() config.State {
 
 // watchTargets creates or restarts the targets watcher.
 func (w *GitWatcher) watchTargets() (err error) {
-	fmt.Println(w.state.Targets)
 	targetRepos := make([]gitwatch.Repository, len(w.state.Targets))
 	for i, t := range w.state.Targets {
 		dir := t.Name
@@ -225,6 +224,7 @@ func (w GitWatcher) send(target task.Target, path string, shutdown bool) {
 		Target:   target,
 		Path:     path,
 		Shutdown: shutdown,
+		Env:      w.state.Env,
 	}
 }
 
