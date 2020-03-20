@@ -13,9 +13,7 @@ jobs:
     steps:
       - uses: actions/setup-go@v1
       - uses: actions/checkout@v2
-
-      - name: Get
-        run: go get -v -t -d
+      - run: go get -v -t -d
 
       - name: Test
         run: go test -v ./...
