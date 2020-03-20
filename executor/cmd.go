@@ -4,8 +4,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/picostack/pico/service/secret"
-	"github.com/picostack/pico/service/task"
+	"github.com/picostack/pico/secret"
+	"github.com/picostack/pico/task"
 )
 
 var _ Executor = &CommandExecutor{}

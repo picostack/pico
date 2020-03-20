@@ -1,7 +1,7 @@
 package reconfigurer
 
 import (
-	"github.com/picostack/pico/service/watcher"
+	"github.com/picostack/pico/watcher"
 )
 
 // Provider describes a type that can provide config state events to a target

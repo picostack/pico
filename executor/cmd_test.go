@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/picostack/pico/service/executor"
-	"github.com/picostack/pico/service/secret/memory"
-	"github.com/picostack/pico/service/task"
+	"github.com/picostack/pico/executor"
+	"github.com/picostack/pico/secret/memory"
+	"github.com/picostack/pico/task"
 )
 
 func TestMain(m *testing.M) {

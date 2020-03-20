@@ -1,7 +1,7 @@
 package watcher
 
 import (
-	"github.com/picostack/pico/service/config"
+	"github.com/picostack/pico/config"
 )
 
 // Watcher describes a type that receives a configuration and sets up the

@@ -1,6 +1,6 @@
 package watcher
 
-import "github.com/picostack/pico/service/config"
+import "github.com/picostack/pico/config"
 
 var _ Watcher = &MockWatcher{}
 

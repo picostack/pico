@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/picostack/pico/service/task"
+	"github.com/picostack/pico/task"
 )
 
 var w *GitWatcher

@@ -1,8 +1,8 @@
 package reconfigurer
 
 import (
-	"github.com/picostack/pico/service/config"
-	"github.com/picostack/pico/service/watcher"
+	"github.com/picostack/pico/config"
+	"github.com/picostack/pico/watcher"
 )
 
 var _ Provider = &Static{}

@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/Southclaws/gitwatch"
-	"github.com/picostack/pico/service/config"
-	"github.com/picostack/pico/service/watcher"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+
+	"github.com/picostack/pico/config"
+	"github.com/picostack/pico/watcher"
 )
 
 var _ Provider = &GitProvider{}

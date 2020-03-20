@@ -7,7 +7,7 @@ import (
 	"github.com/robertkrimen/otto"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/picostack/pico/service/task"
+	"github.com/picostack/pico/task"
 )
 
 func Test_applyFileTargets(t *testing.T) {

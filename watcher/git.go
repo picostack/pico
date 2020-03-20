@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 
-	"github.com/picostack/pico/service/config"
-	"github.com/picostack/pico/service/task"
+	"github.com/picostack/pico/config"
+	"github.com/picostack/pico/task"
 )
 
 var _ Watcher = &GitWatcher{}

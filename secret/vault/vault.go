@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/picostack/pico/service/secret"
+	"github.com/picostack/pico/secret"
 )
 
 // VaultSecrets implements a secret.Store backed by Hashicorp Vault

@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/picostack/pico/service/config"
-	"github.com/picostack/pico/service/task"
+	"github.com/picostack/pico/config"
+	"github.com/picostack/pico/task"
 )
 
 func TestStateTransitions(t *testing.T) {

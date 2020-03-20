@@ -3,7 +3,7 @@ package executor
 import (
 	"fmt"
 
-	"github.com/picostack/pico/service/task"
+	"github.com/picostack/pico/task"
 )
 
 // Printer implements an executor that doesn't actually execute, just prints.
