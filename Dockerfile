@@ -1,3 +1,3 @@
 FROM docker/compose
-COPY pico /bin/pico
-ENTRYPOINT ["pico"]
+COPY pico /
+ENTRYPOINT ["/pico"]
