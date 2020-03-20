@@ -32,6 +32,8 @@ type GitWatcher struct {
 	initialised bool
 	initialise  chan bool
 	newState    chan config.State
+	stateReq    chan struct{}
+	stateRes    chan config.State
 	errors      chan error
 }
 
@@ -50,6 +52,8 @@ func NewGitWatcher(
 
 		initialise: make(chan bool),
 		newState:   make(chan config.State, 16),
+		stateReq:   make(chan struct{}),
+		stateRes:   make(chan config.State),
 		errors:     make(chan error, 16),
 	}
 }
@@ -68,6 +72,9 @@ func (w *GitWatcher) Start() error {
 				zap.Any("new_state", newState))
 
 			return w.doReconfigure(newState)
+
+		case <-w.stateReq:
+			w.stateRes <- w.state
 
 		case event := <-w.targetsWatcher.Events:
 			zap.L().Debug("git watcher received a target event",
@@ -139,7 +146,11 @@ func (w *GitWatcher) SetState(state config.State) error {
 
 // GetState implements Watcher
 func (w *GitWatcher) GetState() config.State {
-	return w.state
+	if !w.initialised {
+		return w.state
+	}
+	w.stateReq <- struct{}{}
+	return <-w.stateRes
 }
 
 // watchTargets creates or restarts the targets watcher.
