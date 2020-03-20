@@ -1,3 +1,6 @@
+// Package executor contains an interface and implementations for task execution
+// engines. These engines simply subscribe to a queue of execution tasks and
+// execute them as they arrive.
 package executor
 
 import "github.com/picostack/pico/task"
