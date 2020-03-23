@@ -35,6 +35,7 @@ type Config struct {
 	VaultToken    string
 	VaultPath     string
 	VaultRenewal  time.Duration
+	VaultConfig   string
 }
 
 // App stores application state
@@ -52,19 +53,6 @@ func Initialise(c Config) (app *App, err error) {
 
 	app.config = c
 
-	var authMethod transport.AuthMethod
-	if c.SSH {
-		authMethod, err = ssh.NewSSHAgentAuth("git")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to set up SSH authentication")
-		}
-	} else if c.Target.User != "" {
-		authMethod = &http.BasicAuth{
-			Username: c.Target.User,
-			Password: c.Target.Pass,
-		}
-	}
-
 	var secretStore secret.Store
 	if c.VaultAddress != "" {
 		zap.L().Debug("connecting to vault",
@@ -81,6 +69,18 @@ func Initialise(c Config) (app *App, err error) {
 		secretStore = &memory.MemorySecrets{
 			// TODO: pull env vars with PICO_SECRET_* or something and shove em here
 		}
+	}
+
+	secretConfig, err := secretStore.GetSecretsForTarget(c.VaultConfig)
+	if err != nil {
+		zap.L().Info("could not read additional config from vault", zap.String("path", c.VaultConfig))
+		err = nil
+	}
+	zap.L().Debug("read configuration secrets from secret store", zap.Strings("keys", getKeys(secretConfig)))
+
+	authMethod, err := getAuthMethod(c, secretConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create an authentication method from the given config")
 	}
 
 	app.secrets = secretStore
@@ -142,4 +142,40 @@ func (app *App) Start(ctx context.Context) error {
 	}
 
 	return g.Wait()
+}
+
+func getAuthMethod(c Config, secretConfig map[string]string) (transport.AuthMethod, error) {
+	if c.SSH {
+		authMethod, err := ssh.NewSSHAgentAuth("git")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to set up SSH authentication")
+		}
+		return authMethod, nil
+	}
+
+	if c.Target.User != "" && c.Target.Pass != "" {
+		return &http.BasicAuth{
+			Username: c.Target.User,
+			Password: c.Target.Pass,
+		}, nil
+	}
+
+	user, userok := secretConfig["GIT_USERNAME"]
+	pass, passok := secretConfig["GIT_PASSWORD"]
+	if userok && passok {
+		return &http.BasicAuth{
+			Username: user,
+			Password: pass,
+		}, nil
+	}
+
+	return nil, nil
+}
+
+func getKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }
