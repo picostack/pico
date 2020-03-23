@@ -97,8 +97,8 @@ func TestCommandPrepareWithGlobal(t *testing.T) {
 	assert.Equal(t, exec{
 		path: "./",
 		env: map[string]string{
-			"SOME_SECRET":   "123",
-			"GLOBAL_SECRET": "456",
+			"SOME_SECRET": "123",
+			"SECRET":      "456",
 		},
 		shutdown:        false,
 		passEnvironment: false,

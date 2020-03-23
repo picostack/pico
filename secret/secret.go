@@ -19,7 +19,7 @@ func GetPrefixedSecrets(s Store, path, prefix string) (map[string]string, error)
 	pass := make(map[string]string)
 	for k, v := range all {
 		if strings.HasPrefix(k, prefix) {
-			pass[k] = v
+			pass[strings.TrimPrefix(k, prefix)] = v
 		}
 	}
 	return pass, nil
