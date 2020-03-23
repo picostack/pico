@@ -26,16 +26,17 @@ import (
 
 // Config specifies static configuration parameters (from CLI or environment)
 type Config struct {
-	Target        task.Repo
-	Hostname      string
-	SSH           bool
-	Directory     string
-	CheckInterval time.Duration
-	VaultAddress  string
-	VaultToken    string
-	VaultPath     string
-	VaultRenewal  time.Duration
-	VaultConfig   string
+	Target          task.Repo
+	Hostname        string
+	SSH             bool
+	Directory       string
+	PassEnvironment bool
+	CheckInterval   time.Duration
+	VaultAddress    string
+	VaultToken      string
+	VaultPath       string
+	VaultRenewal    time.Duration
+	VaultConfig     string
 }
 
 // App stores application state
@@ -119,7 +120,7 @@ func (app *App) Start(ctx context.Context) error {
 	// states and potentially retry in some circumstances. Pico should be the
 	// kind of service that barely goes down, only when absolutely necessary.
 
-	ce := executor.NewCommandExecutor(app.secrets)
+	ce := executor.NewCommandExecutor(app.secrets, app.config.PassEnvironment, app.config.VaultConfig, "GLOBAL_")
 	g.Go(func() error {
 		ce.Subscribe(app.bus)
 		return nil

@@ -52,7 +52,7 @@ type Target struct {
 
 // Execute runs the target's command in the specified directory with the
 // specified environment variables
-func (t *Target) Execute(dir string, env map[string]string, shutdown bool) (err error) {
+func (t *Target) Execute(dir string, env map[string]string, shutdown bool, inheritEnv bool) (err error) {
 	if env == nil {
 		env = make(map[string]string)
 	}
@@ -67,10 +67,10 @@ func (t *Target) Execute(dir string, env map[string]string, shutdown bool) (err 
 		command = t.Up
 	}
 
-	return execute(dir, env, command)
+	return execute(dir, env, command, inheritEnv)
 }
 
-func execute(dir string, env map[string]string, command []string) (err error) {
+func execute(dir string, env map[string]string, command []string, inheritEnv bool) (err error) {
 	if len(command) == 0 {
 		return errors.New("attempt to execute target with empty command")
 	}
@@ -83,10 +83,14 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 
-	cmd.Env = os.Environ()
-	for k, v := range env {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	var cmdEnv []string
+	if inheritEnv {
+		cmdEnv = os.Environ()
 	}
+	for k, v := range env {
+		cmdEnv = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	}
+	cmd.Env = cmdEnv
 
 	return cmd.Run()
 }
