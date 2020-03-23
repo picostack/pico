@@ -49,6 +49,7 @@ this repository has new commits, Pico will automatically reconfigure.`,
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
 				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH", Value: "/secret"},
 				cli.DurationFlag{Name: "vault-renew-interval", EnvVar: "VAULT_RENEW_INTERVAL", Value: time.Hour * 24},
+				cli.StringFlag{Name: "vault-config-path", EnvVar: "VAULT_CONFIG_PATH", Value: "pico"},
 			},
 			Action: func(c *cli.Context) (err error) {
 				if !c.Args().Present() {
@@ -84,6 +85,7 @@ this repository has new commits, Pico will automatically reconfigure.`,
 					VaultToken:    c.String("vault-token"),
 					VaultPath:     c.String("vault-path"),
 					VaultRenewal:  c.Duration("vault-renew-interval"),
+					VaultConfig:   c.String("vault-config-path"),
 				})
 				if err != nil {
 					return errors.Wrap(err, "failed to initialise")
