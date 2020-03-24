@@ -101,7 +101,7 @@ func Initialise(c Config) (app *App, err error) {
 		app.config.Directory,
 		app.bus,
 		app.config.CheckInterval,
-		authMethod,
+		secretStore,
 	)
 
 	return

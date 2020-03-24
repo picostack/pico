@@ -11,8 +11,10 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 
 	"github.com/picostack/pico/config"
+	"github.com/picostack/pico/secret"
 	"github.com/picostack/pico/task"
 )
 
@@ -24,7 +26,7 @@ type GitWatcher struct {
 	directory     string
 	bus           chan task.ExecutionTask
 	checkInterval time.Duration
-	ssh           transport.AuthMethod
+	secrets       secret.Store
 
 	targetsWatcher *gitwatch.Session
 	state          config.State
@@ -42,13 +44,13 @@ func NewGitWatcher(
 	directory string,
 	bus chan task.ExecutionTask,
 	checkInterval time.Duration,
-	ssh transport.AuthMethod,
+	secrets secret.Store,
 ) *GitWatcher {
 	return &GitWatcher{
 		directory:     directory,
 		bus:           bus,
 		checkInterval: checkInterval,
-		ssh:           ssh,
+		secrets:       secrets,
 
 		initialise: make(chan bool),
 		newState:   make(chan config.State, 16),
@@ -161,11 +163,16 @@ func (w *GitWatcher) watchTargets() (err error) {
 		if t.Branch != "" {
 			dir = fmt.Sprintf("%s_%s", t.Name, t.Branch)
 		}
+		auth, err := w.getAuthForTarget(t)
+		if err != nil {
+			return err
+		}
 		zap.L().Debug("assigned target", zap.String("url", t.RepoURL), zap.String("directory", dir))
 		targetRepos[i] = gitwatch.Repository{
 			URL:       t.RepoURL,
 			Branch:    t.Branch,
 			Directory: dir,
+			Auth:      auth,
 		}
 	}
 
@@ -177,7 +184,7 @@ func (w *GitWatcher) watchTargets() (err error) {
 		targetRepos,
 		w.checkInterval,
 		w.directory,
-		w.ssh,
+		nil,
 		false)
 	if err != nil {
 		return errors.Wrap(err, "failed to watch targets")
@@ -209,6 +216,31 @@ func (w *GitWatcher) handle(e gitwatch.Event) (err error) {
 		zap.Time("timestamp", e.Timestamp))
 	w.send(target, e.Path, false)
 	return nil
+}
+
+func (w GitWatcher) getAuthForTarget(t task.Target) (transport.AuthMethod, error) {
+	for _, a := range w.state.AuthMethods {
+		if a.Name == t.Auth {
+			s, err := w.secrets.GetSecretsForTarget(a.Path)
+			if err != nil {
+				return nil, err
+			}
+			username, ok := s[a.UserKey]
+			if !ok {
+				return nil, errors.Errorf("auth object 'user_key' did not point to a valid element in the specified secret at '%s'", a.Path)
+			}
+			password, ok := s[a.PassKey]
+			if !ok {
+				return nil, errors.Errorf("auth object 'pass_key' did not point to a valid element in the specified secret at '%s'", a.Path)
+			}
+			zap.L().Debug("using auth method for target", zap.String("name", a.Name))
+			return &http.BasicAuth{
+				Username: username,
+				Password: password,
+			}, nil
+		}
+	}
+	return nil, nil
 }
 
 func (w GitWatcher) executeTargets(targets []task.Target, shutdown bool) {

@@ -81,6 +81,7 @@ func (cb *configBuilder) construct(hostname string) (err error) {
 	cb.vm.Run(`'use strict';
 var STATE = {
 	targets: [],
+	auths: [],
 	env: {}
 };
 
