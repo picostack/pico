@@ -48,6 +48,9 @@ type Target struct {
 
 	// Whether or not to run `Command` on first run, useful if the command is `docker-compose up`
 	InitialRun bool `json:"initial_run"`
+
+	// Auth method to use from the auth store
+	Auth string `json:"auth"`
 }
 
 // Execute runs the target's command in the specified directory with the
