@@ -67,12 +67,15 @@ func TestCommandPrepareWithoutPassthrough(t *testing.T) {
 		},
 	}, false, "pico", "GLOBAL_")
 
-	ex, err := ce.prepare("test", "./", false, nil)
+	ex, err := ce.prepare("test", "./", false, map[string]string{
+		"DATA_DIR": "/data/shared",
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, exec{
 		path: "./",
 		env: map[string]string{
 			"SOME_SECRET": "123",
+			"DATA_DIR":    "/data/shared",
 		},
 		shutdown:        false,
 		passEnvironment: false,
@@ -92,13 +95,16 @@ func TestCommandPrepareWithGlobal(t *testing.T) {
 		},
 	}, false, "pico", "GLOBAL_")
 
-	ex, err := ce.prepare("test", "./", false, nil)
+	ex, err := ce.prepare("test", "./", false, map[string]string{
+		"DATA_DIR": "/data/shared",
+	})
 	assert.NoError(t, err)
 	assert.Equal(t, exec{
 		path: "./",
 		env: map[string]string{
 			"SOME_SECRET": "123",
 			"SECRET":      "456",
+			"DATA_DIR":    "/data/shared",
 		},
 		shutdown:        false,
 		passEnvironment: false,

@@ -103,7 +103,7 @@ func (e *CommandExecutor) execute(
 		zap.Strings("cmd", target.Up),
 		zap.String("url", target.RepoURL),
 		zap.String("dir", path),
-		zap.Int("env", len(ex.env)),
+		zap.Any("env", ex.env),
 		zap.Bool("passthrough", e.passEnvironment))
 
 	return target.Execute(ex.path, ex.env, ex.shutdown, ex.passEnvironment)
