@@ -1,4 +1,4 @@
-package executor_test
+package executor
 
 import (
 	"os"
@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/picostack/pico/executor"
 	"github.com/picostack/pico/secret/memory"
 	"github.com/picostack/pico/task"
+	"github.com/stretchr/testify/assert"
 
 	_ "github.com/picostack/pico/logger"
 )
@@ -20,11 +20,13 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommandExecutor(t *testing.T) {
-	ce := executor.NewCommandExecutor(&memory.MemorySecrets{
-		Secrets: map[string]string{
-			"SOME_SECRET": "123",
+	ce := NewCommandExecutor(&memory.MemorySecrets{
+		Secrets: map[string]map[string]string{
+			"test": map[string]string{
+				"SOME_SECRET": "123",
+			},
 		},
-	})
+	}, false, "pico", "GLOBAL_")
 	bus := make(chan task.ExecutionTask)
 
 	g := errgroup.Group{}
@@ -54,4 +56,57 @@ func TestCommandExecutor(t *testing.T) {
 	}
 
 	os.RemoveAll(".test/.git")
+}
+
+func TestCommandPrepareWithoutPassthrough(t *testing.T) {
+	ce := NewCommandExecutor(&memory.MemorySecrets{
+		Secrets: map[string]map[string]string{
+			"test": map[string]string{
+				"SOME_SECRET": "123",
+			},
+		},
+	}, false, "pico", "GLOBAL_")
+
+	ex, err := ce.prepare("test", "./", false, map[string]string{
+		"DATA_DIR": "/data/shared",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, exec{
+		path: "./",
+		env: map[string]string{
+			"SOME_SECRET": "123",
+			"DATA_DIR":    "/data/shared",
+		},
+		shutdown:        false,
+		passEnvironment: false,
+	}, ex)
+}
+
+func TestCommandPrepareWithGlobal(t *testing.T) {
+	ce := NewCommandExecutor(&memory.MemorySecrets{
+		Secrets: map[string]map[string]string{
+			"test": map[string]string{
+				"SOME_SECRET": "123",
+			},
+			"pico": map[string]string{
+				"GLOBAL_SECRET": "456",
+				"IGNORE":        "this",
+			},
+		},
+	}, false, "pico", "GLOBAL_")
+
+	ex, err := ce.prepare("test", "./", false, map[string]string{
+		"DATA_DIR": "/data/shared",
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, exec{
+		path: "./",
+		env: map[string]string{
+			"SOME_SECRET": "123",
+			"SECRET":      "456",
+			"DATA_DIR":    "/data/shared",
+		},
+		shutdown:        false,
+		passEnvironment: false,
+	}, ex)
 }

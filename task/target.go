@@ -1,10 +1,11 @@
 package task
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/pkg/errors"
 )
 
 // ExecutionTask encodes a Target with additional execution-time information.
@@ -13,6 +14,13 @@ type ExecutionTask struct {
 	Path     string
 	Shutdown bool
 	Env      map[string]string
+}
+
+// Repo represents a Git repo with credentials
+type Repo struct {
+	URL  string
+	User string
+	Pass string
 }
 
 // Targets is just a list of target objects, to implement the Sort interface
@@ -41,11 +49,14 @@ type Target struct {
 
 	// Whether or not to run `Command` on first run, useful if the command is `docker-compose up`
 	InitialRun bool `json:"initial_run"`
+
+	// Auth method to use from the auth store
+	Auth string `json:"auth"`
 }
 
 // Execute runs the target's command in the specified directory with the
 // specified environment variables
-func (t *Target) Execute(dir string, env map[string]string, shutdown bool) (err error) {
+func (t *Target) Execute(dir string, env map[string]string, shutdown bool, inheritEnv bool) (err error) {
 	if env == nil {
 		env = make(map[string]string)
 	}
@@ -60,15 +71,20 @@ func (t *Target) Execute(dir string, env map[string]string, shutdown bool) (err 
 		command = t.Up
 	}
 
-	return execute(dir, env, command)
-}
-
-func execute(dir string, env map[string]string, command []string) (err error) {
-	if len(command) == 0 {
-		return errors.New("attempt to execute target with empty command")
+	c, err := prepare(dir, env, command, inheritEnv)
+	if err != nil {
+		return errors.Wrap(err, "failed to prepare command for execution")
 	}
 
-	cmd := exec.Command(command[0])
+	return c.Run()
+}
+
+func prepare(dir string, env map[string]string, command []string, inheritEnv bool) (cmd *exec.Cmd, err error) {
+	if len(command) == 0 {
+		return nil, errors.New("attempt to execute target with empty command")
+	}
+
+	cmd = exec.Command(command[0])
 	if len(command) > 1 {
 		cmd.Args = append(cmd.Args, command[1:]...)
 	}
@@ -76,10 +92,14 @@ func execute(dir string, env map[string]string, command []string) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 
-	cmd.Env = os.Environ()
-	for k, v := range env {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
+	var cmdEnv []string
+	if inheritEnv {
+		cmdEnv = os.Environ()
 	}
+	for k, v := range env {
+		cmdEnv = append(cmdEnv, fmt.Sprintf("%s=%s", k, v))
+	}
+	cmd.Env = cmdEnv
 
-	return cmd.Run()
+	return cmd, nil
 }

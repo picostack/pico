@@ -21,8 +21,17 @@ import (
 
 // State represents a desired system state
 type State struct {
-	Targets task.Targets      `json:"targets"`
-	Env     map[string]string `json:"env"`
+	Targets     task.Targets      `json:"targets"`
+	AuthMethods []AuthMethod      `json:"auths"`
+	Env         map[string]string `json:"env"`
+}
+
+// AuthMethod represents a method of authentication for a target
+type AuthMethod struct {
+	Name    string `json:"name"`     // name of the auth method
+	Path    string `json:"path"`     // path within the secret store
+	UserKey string `json:"user_key"` // key for username
+	PassKey string `json:"pass_key"` // key for password
 }
 
 // ConfigFromDirectory searches a directory for configuration files and
@@ -72,6 +81,7 @@ func (cb *configBuilder) construct(hostname string) (err error) {
 	cb.vm.Run(`'use strict';
 var STATE = {
 	targets: [],
+	auths: [],
 	env: {}
 };
 
@@ -89,6 +99,15 @@ function T(t) {
 
 function E(k, v) {
 	STATE.env[k] = v
+}
+
+function A(a) {
+	if(a.name === undefined) { throw "auth name undefined"; }
+	if(a.path === undefined) { throw "auth path undefined"; }
+	if(a.user_key === undefined) { throw "auth user_key undefined"; }
+	if(a.pass_key === undefined) { throw "auth pass_key undefined"; }
+
+	STATE.auths.push(a);
 }
 `)
 

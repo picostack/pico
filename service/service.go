@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 
 	"github.com/picostack/pico/executor"
@@ -25,15 +26,17 @@ import (
 
 // Config specifies static configuration parameters (from CLI or environment)
 type Config struct {
-	Target        string
-	Hostname      string
-	NoSSH         bool
-	Directory     string
-	CheckInterval time.Duration
-	VaultAddress  string
-	VaultToken    string
-	VaultPath     string
-	VaultRenewal  time.Duration
+	Target          task.Repo
+	Hostname        string
+	SSH             bool
+	Directory       string
+	PassEnvironment bool
+	CheckInterval   time.Duration
+	VaultAddress    string
+	VaultToken      string
+	VaultPath       string
+	VaultRenewal    time.Duration
+	VaultConfig     string
 }
 
 // App stores application state
@@ -50,14 +53,6 @@ func Initialise(c Config) (app *App, err error) {
 	app = new(App)
 
 	app.config = c
-
-	var authMethod transport.AuthMethod
-	if !c.NoSSH {
-		authMethod, err = ssh.NewSSHAgentAuth("git")
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to set up SSH authentication")
-		}
-	}
 
 	var secretStore secret.Store
 	if c.VaultAddress != "" {
@@ -77,6 +72,18 @@ func Initialise(c Config) (app *App, err error) {
 		}
 	}
 
+	secretConfig, err := secretStore.GetSecretsForTarget(c.VaultConfig)
+	if err != nil {
+		zap.L().Info("could not read additional config from vault", zap.String("path", c.VaultConfig))
+		err = nil
+	}
+	zap.L().Debug("read configuration secrets from secret store", zap.Strings("keys", getKeys(secretConfig)))
+
+	authMethod, err := getAuthMethod(c, secretConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create an authentication method from the given config")
+	}
+
 	app.secrets = secretStore
 
 	app.bus = make(chan task.ExecutionTask, 100)
@@ -85,7 +92,7 @@ func Initialise(c Config) (app *App, err error) {
 	app.reconfigurer = reconfigurer.New(
 		c.Directory,
 		c.Hostname,
-		c.Target,
+		c.Target.URL,
 		c.CheckInterval,
 		authMethod,
 	)
@@ -95,7 +102,7 @@ func Initialise(c Config) (app *App, err error) {
 		app.config.Directory,
 		app.bus,
 		app.config.CheckInterval,
-		authMethod,
+		secretStore,
 	)
 
 	return
@@ -113,7 +120,7 @@ func (app *App) Start(ctx context.Context) error {
 	// states and potentially retry in some circumstances. Pico should be the
 	// kind of service that barely goes down, only when absolutely necessary.
 
-	ce := executor.NewCommandExecutor(app.secrets)
+	ce := executor.NewCommandExecutor(app.secrets, app.config.PassEnvironment, app.config.VaultConfig, "GLOBAL_")
 	g.Go(func() error {
 		ce.Subscribe(app.bus)
 		return nil
@@ -136,4 +143,40 @@ func (app *App) Start(ctx context.Context) error {
 	}
 
 	return g.Wait()
+}
+
+func getAuthMethod(c Config, secretConfig map[string]string) (transport.AuthMethod, error) {
+	if c.SSH {
+		authMethod, err := ssh.NewSSHAgentAuth("git")
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to set up SSH authentication")
+		}
+		return authMethod, nil
+	}
+
+	if c.Target.User != "" && c.Target.Pass != "" {
+		return &http.BasicAuth{
+			Username: c.Target.User,
+			Password: c.Target.Pass,
+		}, nil
+	}
+
+	user, userok := secretConfig["GIT_USERNAME"]
+	pass, passok := secretConfig["GIT_PASSWORD"]
+	if userok && passok {
+		return &http.BasicAuth{
+			Username: user,
+			Password: pass,
+		}, nil
+	}
+
+	return nil, nil
+}
+
+func getKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }

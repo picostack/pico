@@ -13,6 +13,7 @@ import (
 
 	_ "github.com/picostack/pico/logger"
 	"github.com/picostack/pico/service"
+	"github.com/picostack/pico/task"
 )
 
 var version = "master"
@@ -38,14 +39,18 @@ this repository has new commits, Pico will automatically reconfigure.`,
 			Usage:     "argument `target` specifies Git repository for configuration.",
 			ArgsUsage: "target",
 			Flags: []cli.Flag{
+				cli.StringFlag{Name: "git-username", EnvVar: "GIT_USERNAME"},
+				cli.StringFlag{Name: "git-password", EnvVar: "GIT_PASSWORD"},
 				cli.StringFlag{Name: "hostname", EnvVar: "HOSTNAME"},
 				cli.StringFlag{Name: "directory", EnvVar: "DIRECTORY", Value: "./cache/"},
-				cli.BoolFlag{Name: "no-ssh", EnvVar: "NO_SSH"},
+				cli.DurationFlag{Name: "pass-env", EnvVar: "PASS_ENV"},
+				cli.BoolFlag{Name: "ssh", EnvVar: "SSH"},
 				cli.DurationFlag{Name: "check-interval", EnvVar: "CHECK_INTERVAL", Value: time.Second * 10},
 				cli.StringFlag{Name: "vault-addr", EnvVar: "VAULT_ADDR"},
 				cli.StringFlag{Name: "vault-token", EnvVar: "VAULT_TOKEN"},
 				cli.StringFlag{Name: "vault-path", EnvVar: "VAULT_PATH", Value: "/secret"},
 				cli.DurationFlag{Name: "vault-renew-interval", EnvVar: "VAULT_RENEW_INTERVAL", Value: time.Hour * 24},
+				cli.StringFlag{Name: "vault-config-path", EnvVar: "VAULT_CONFIG_PATH", Value: "pico"},
 			},
 			Action: func(c *cli.Context) (err error) {
 				if !c.Args().Present() {
@@ -68,15 +73,21 @@ this repository has new commits, Pico will automatically reconfigure.`,
 				zap.L().Debug("initialising service")
 
 				svc, err := service.Initialise(service.Config{
-					Target:        c.Args().First(),
-					Hostname:      hostname,
-					Directory:     c.String("directory"),
-					NoSSH:         c.Bool("no-ssh"),
-					CheckInterval: c.Duration("check-interval"),
-					VaultAddress:  c.String("vault-addr"),
-					VaultToken:    c.String("vault-token"),
-					VaultPath:     c.String("vault-path"),
-					VaultRenewal:  c.Duration("vault-renew-interval"),
+					Target: task.Repo{
+						URL:  c.Args().First(),
+						User: c.String("git-username"),
+						Pass: c.String("git-password"),
+					},
+					Hostname:        hostname,
+					Directory:       c.String("directory"),
+					PassEnvironment: c.Bool("pass-env"),
+					SSH:             c.Bool("ssh"),
+					CheckInterval:   c.Duration("check-interval"),
+					VaultAddress:    c.String("vault-addr"),
+					VaultToken:      c.String("vault-token"),
+					VaultPath:       c.String("vault-path"),
+					VaultRenewal:    c.Duration("vault-renew-interval"),
+					VaultConfig:     c.String("vault-config-path"),
 				})
 				if err != nil {
 					return errors.Wrap(err, "failed to initialise")
