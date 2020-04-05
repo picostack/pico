@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -112,6 +114,19 @@ this repository has new commits, Pico will automatically reconfigure.`,
 				return
 			},
 		},
+	}
+
+	if os.Getenv("DEBUG") != "" {
+		go func() {
+			sigs := make(chan os.Signal, 1)
+			signal.Notify(sigs, os.Interrupt)
+			buf := make([]byte, 1<<20)
+			for {
+				<-sigs
+				stacklen := runtime.Stack(buf, true)
+				log.Printf("\nPrinting goroutine stack trace because `DEBUG` was set.\n%s\n", buf[:stacklen])
+			}
+		}()
 	}
 
 	err := app.Run(os.Args)
