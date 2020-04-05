@@ -132,7 +132,11 @@ func (app *App) Start(ctx context.Context) error {
 
 	// TODO: reconfigurer can also fail when setting up gitwatch.
 	g.Go(func() error {
-		return app.reconfigurer.Configure(app.watcher)
+		if err := app.reconfigurer.Configure(app.watcher); err != nil {
+			zap.L().Error("reconfigure failed", zap.Error(err))
+			return err
+		}
+		return nil
 	})
 
 	if s, ok := app.secrets.(*vault.VaultSecrets); ok {
