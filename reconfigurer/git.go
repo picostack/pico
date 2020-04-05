@@ -88,6 +88,9 @@ func (p *GitProvider) reconfigure(w watcher.Watcher) (err error) {
 		state.Env["HOSTNAME"] = p.hostname
 	}
 
+	zap.L().Debug("setting state for watcher",
+		zap.Any("new_state", state))
+
 	return w.SetState(state)
 }
 
