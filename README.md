@@ -1,6 +1,6 @@
 <p align="center">
   <a aria-label="Pico logo" href="https://pico.sh">
-    <img src="https://pico.sh/img/pico-wordmark.svg" />
+    <img src="https://pico.sh/img/pico-wordmark-1000.png" width="420" />
   </a>
 </p>
 
