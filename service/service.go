@@ -10,7 +10,6 @@ import (
 	"github.com/eapache/go-resiliency/retrier"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
@@ -110,39 +109,43 @@ func Initialise(c Config) (app *App, err error) {
 
 // Start launches the app and blocks until fatal error
 func (app *App) Start(ctx context.Context) error {
-	g, ctx := errgroup.WithContext(ctx)
-
-	zap.L().Debug("starting service daemon")
-
-	// TODO: Replace this errgroup with a more resilient solution.
-	// Not all of these tasks fail in the same way. Some don't fail at all.
-	// This needs to be rewritten to be more considerate of different failure
-	// states and potentially retry in some circumstances. Pico should be the
-	// kind of service that barely goes down, only when absolutely necessary.
+	errs := make(chan error)
 
 	ce := executor.NewCommandExecutor(app.secrets, app.config.PassEnvironment, app.config.VaultConfig, "GLOBAL_")
-	g.Go(func() error {
+	go func() {
 		ce.Subscribe(app.bus)
-		return nil
-	})
+	}()
 
-	// TODO: gw can fail when setting up the gitwatch instance, it should retry.
 	gw := app.watcher.(*watcher.GitWatcher)
-	g.Go(gw.Start)
+	go func() {
+		errs <- errors.Wrap(gw.Start(), "git watcher terminated fatally")
+	}()
 
-	// TODO: reconfigurer can also fail when setting up gitwatch.
-	g.Go(func() error {
-		return app.reconfigurer.Configure(app.watcher)
-	})
+	go func() {
+		errs <- errors.Wrap(app.reconfigurer.Configure(app.watcher), "git watcher terminated fatally")
+	}()
 
 	if s, ok := app.secrets.(*vault.VaultSecrets); ok {
-		g.Go(func() error {
-			return retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil).
-				RunCtx(ctx, s.Renew)
-		})
+		go func() {
+			errs <- errors.Wrap(retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil).RunCtx(ctx, s.Renew), "git watcher terminated fatally")
+		}()
 	}
 
-	return g.Wait()
+	handle := func() error {
+		select {
+		case err := <-errs:
+			return err
+		case <-ctx.Done():
+			return context.Canceled
+		}
+	}
+
+	zap.L().Debug("starting service main loop")
+	for {
+		if err := handle(); err != nil {
+			return err
+		}
+	}
 }
 
 func getAuthMethod(c Config, secretConfig map[string]string) (transport.AuthMethod, error) {
