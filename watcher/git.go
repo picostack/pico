@@ -62,6 +62,8 @@ func NewGitWatcher(
 
 // Start runs the watcher loop and blocks until a fatal error occurs
 func (w *GitWatcher) Start() error {
+	zap.L().Debug("git watcher initialising, waiting for first state to be set")
+
 	// wait for the first config event to set the initial state
 	<-w.initialise
 
