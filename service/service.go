@@ -131,20 +131,11 @@ func (app *App) Start(ctx context.Context) error {
 		}()
 	}
 
-	handle := func() error {
-		select {
-		case err := <-errs:
-			return err
-		case <-ctx.Done():
-			return context.Canceled
-		}
-	}
-
-	zap.L().Debug("starting service main loop")
-	for {
-		if err := handle(); err != nil {
-			return err
-		}
+	select {
+	case err := <-errs:
+		return err
+	case <-ctx.Done():
+		return context.Canceled
 	}
 }
 
