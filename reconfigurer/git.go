@@ -113,15 +113,25 @@ func (p *GitProvider) watchConfig() (err error) {
 		return errors.Wrap(err, "failed to watch config target")
 	}
 
+	errs := make(chan error)
 	go func() {
 		e := p.configWatcher.Run()
 		if e != nil && !errors.Is(e, context.Canceled) {
-			zap.L().Error("config watcher failed", zap.Error(e))
+			errs <- e
+		}
+		// TODO: forward these errors elsewhere.
+		for e = range p.configWatcher.Errors {
+			zap.L().Error("config watcher error occurred", zap.Error(e))
 		}
 	}()
 	zap.L().Debug("created new config watcher, awaiting setup")
 
-	<-p.configWatcher.InitialDone
+	select {
+	case <-p.configWatcher.InitialDone:
+	case err = <-errs:
+	}
+
+	zap.L().Debug("config watcher initialised")
 
 	return
 }

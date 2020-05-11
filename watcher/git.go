@@ -192,15 +192,21 @@ func (w *GitWatcher) watchTargets() (err error) {
 		return errors.Wrap(err, "failed to watch targets")
 	}
 
+	errs := make(chan error)
 	go func() {
 		e := w.targetsWatcher.Run()
 		if e != nil && !errors.Is(e, context.Canceled) {
-			w.errors <- e
+			errs <- e
 		}
+		// forward errors from the watcher to the central for-select above
+		w.errors <- <-w.targetsWatcher.Errors
 	}()
 	zap.L().Debug("created targets watcher, awaiting setup")
 
-	<-w.targetsWatcher.InitialDone
+	select {
+	case <-w.targetsWatcher.InitialDone:
+	case err = <-errs:
+	}
 
 	zap.L().Debug("targets watcher initialised")
 
