@@ -1,3 +1,3 @@
-FROM docker/compose:1.25.5
+FROM docker/compose:1.25.1
 COPY pico /
 ENTRYPOINT ["/pico"]
