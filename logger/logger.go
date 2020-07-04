@@ -1,32 +1,51 @@
 package logger
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 func init() {
-	// constructs a logger and replaces the default global logger
+	godotenv.Load("../.env", ".env") //nolint:errcheck
+
+	prod, err := strconv.ParseBool(os.Getenv("PRODUCTION"))
+	if _, ok := err.(*strconv.NumError); !ok {
+		fmt.Println("Error during logging config:", err)
+		os.Exit(1)
+	}
+
 	var config zap.Config
-	if d, e := strconv.ParseBool(os.Getenv("DEVELOPMENT")); d && e == nil || isInTests() {
-		config = zap.NewDevelopmentConfig()
-	} else {
+	if prod && !isInTests() {
 		config = zap.NewProductionConfig()
+	} else {
+		config = zap.NewDevelopmentConfig()
 	}
+
+	var level zapcore.Level
+	if err := level.UnmarshalText([]byte(os.Getenv("LOG_LEVEL"))); err != nil {
+		fmt.Println("Error during logging config:", err)
+		os.Exit(1)
+	}
+
+	config.Level.SetLevel(level)
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	config.DisableStacktrace = true
-	if d, e := strconv.ParseBool(os.Getenv("DEBUG")); d && e == nil || isInTests() {
-		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	}
+
 	logger, err := config.Build()
 	if err != nil {
-		panic(err)
+		fmt.Println("Error during logging config:", err)
+		os.Exit(1)
 	}
 	zap.ReplaceGlobals(logger)
+
+	if !prod {
+		zap.L().Info("logger configured in development mode", zap.String("level", level.String()))
+	}
 }
 
 func isInTests() bool {
