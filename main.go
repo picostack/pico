@@ -57,7 +57,7 @@ this repository has new commits, Pico will automatically reconfigure.`,
 			Action: func(c *cli.Context) (err error) {
 				if !c.Args().Present() {
 					cli.ShowCommandHelp(c, "run")
-					return errors.New("missing argument: target")
+					return errors.New("missing argument: configuration repository URL")
 				}
 
 				ctx, cancel := context.WithCancel(context.Background())
