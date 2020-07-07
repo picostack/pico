@@ -126,13 +126,18 @@ func (p *GitProvider) watchConfig() (err error) {
 	}()
 	zap.L().Debug("created new config watcher, awaiting setup")
 
+	err = p.__waitpoint__watch_config(errs)
+
+	zap.L().Debug("config watcher initialised")
+
+	return
+}
+
+func (p *GitProvider) __waitpoint__watch_config(errs chan error) (err error) {
 	select {
 	case <-p.configWatcher.InitialDone:
 	case err = <-errs:
 	}
-
-	zap.L().Debug("config watcher initialised")
-
 	return
 }
 

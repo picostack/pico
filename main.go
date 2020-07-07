@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -114,26 +115,32 @@ this repository has new commits, Pico will automatically reconfigure.`,
 				case err = <-errs:
 				}
 
+				if strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug" {
+					doTrace()
+				}
+
 				return
 			},
 		},
-	}
-
-	if strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug" {
-		go func() {
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, os.Interrupt)
-			buf := make([]byte, 1<<20)
-			for {
-				<-sigs
-				stacklen := runtime.Stack(buf, true)
-				log.Printf("\nPrinting goroutine stack trace because `DEBUG` was set.\n%s\n", buf[:stacklen])
-			}
-		}()
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
 		zap.L().Fatal("exit", zap.Error(err))
 	}
+}
+
+var waitpoints = regexp.MustCompile(`__waitpoint__(.+)\(`)
+
+func doTrace() {
+	buf := make([]byte, 1<<20)
+	stacklen := runtime.Stack(buf, true)
+
+	fmt.Printf("\nPrinting goroutine stack trace because `DEBUG` was set.\n%s\n", buf[:stacklen])
+	fmt.Println("Code that was waiting:")
+
+	for _, s := range waitpoints.FindAllStringSubmatch(string(buf[:stacklen]), 1) {
+		fmt.Printf("  - %s\n", s[1])
+	}
+	fmt.Println("\nSee the docs on https://pico.sh/ for more information.")
 }
