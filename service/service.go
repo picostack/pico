@@ -32,7 +32,7 @@ type Config struct {
 	PassEnvironment bool
 	CheckInterval   time.Duration
 	VaultAddress    string
-	VaultToken      string
+	VaultToken      string `json:"-"`
 	VaultPath       string
 	VaultRenewal    time.Duration
 	VaultConfig     string

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"strings"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -72,9 +73,7 @@ this repository has new commits, Pico will automatically reconfigure.`,
 					}
 				}
 
-				zap.L().Debug("initialising service")
-
-				svc, err := service.Initialise(service.Config{
+				cfg := service.Config{
 					Target: task.Repo{
 						URL:  c.Args().First(),
 						User: c.String("git-username"),
@@ -90,7 +89,11 @@ this repository has new commits, Pico will automatically reconfigure.`,
 					VaultPath:       c.String("vault-path"),
 					VaultRenewal:    c.Duration("vault-renew-interval"),
 					VaultConfig:     c.String("vault-config-path"),
-				})
+				}
+
+				zap.L().Debug("initialising service", zap.Any("config", cfg))
+
+				svc, err := service.Initialise(cfg)
 				if err != nil {
 					return errors.Wrap(err, "failed to initialise")
 				}
@@ -116,7 +119,7 @@ this repository has new commits, Pico will automatically reconfigure.`,
 		},
 	}
 
-	if os.Getenv("DEBUG") != "" {
+	if strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug" {
 		go func() {
 			sigs := make(chan os.Signal, 1)
 			signal.Notify(sigs, os.Interrupt)
