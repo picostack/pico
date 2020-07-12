@@ -20,7 +20,7 @@ type ExecutionTask struct {
 type Repo struct {
 	URL  string
 	User string
-	Pass string
+	Pass string `json:"-"`
 }
 
 // Targets is just a list of target objects, to implement the Sort interface

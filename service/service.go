@@ -32,7 +32,7 @@ type Config struct {
 	PassEnvironment bool
 	CheckInterval   time.Duration
 	VaultAddress    string
-	VaultToken      string
+	VaultToken      string `json:"-"`
 	VaultPath       string
 	VaultRenewal    time.Duration
 	VaultConfig     string
@@ -63,7 +63,7 @@ func Initialise(c Config) (app *App, err error) {
 
 		secretStore, err = vault.New(c.VaultAddress, c.VaultPath, c.VaultToken, c.VaultRenewal)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to create vault secret store")
 		}
 	} else {
 		secretStore = &memory.MemorySecrets{
@@ -118,16 +118,25 @@ func (app *App) Start(ctx context.Context) error {
 
 	gw := app.watcher.(*watcher.GitWatcher)
 	go func() {
-		errs <- errors.Wrap(gw.Start(), "git watcher terminated fatally")
+		errs <- errors.Wrap(
+			gw.Start(),
+			"git watcher crashed",
+		)
 	}()
 
 	go func() {
-		errs <- errors.Wrap(app.reconfigurer.Configure(app.watcher), "git watcher terminated fatally")
+		errs <- errors.Wrap(
+			app.reconfigurer.Configure(app.watcher),
+			"reconfigure provider crashed",
+		)
 	}()
 
 	if s, ok := app.secrets.(*vault.VaultSecrets); ok {
 		go func() {
-			errs <- errors.Wrap(retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil).RunCtx(ctx, s.Renew), "git watcher terminated fatally")
+			errs <- errors.Wrap(
+				retrier.New(retrier.ConstantBackoff(3, 100*time.Millisecond), nil).RunCtx(ctx, s.Renew),
+				"vault token renewal job failed",
+			)
 		}()
 	}
 
