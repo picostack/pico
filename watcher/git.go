@@ -60,45 +60,49 @@ func NewGitWatcher(
 	}
 }
 
+func (w *GitWatcher) __waitpoint__start_wait_init() {
+	<-w.initialise
+}
+
+func (w *GitWatcher) __waitpoint__start_select_states() (err error) {
+	select {
+	case newState := <-w.newState:
+		zap.L().Debug("git watcher received new state",
+			zap.Any("new_state", newState))
+
+		return w.doReconfigure(newState)
+
+	case <-w.stateReq:
+		w.stateRes <- w.state
+
+	case event := <-w.targetsWatcher.Events:
+		zap.L().Debug("git watcher received a target event",
+			zap.Any("new_state", event))
+
+		if e := w.handle(event); e != nil {
+			zap.L().Error("failed to handle event",
+				zap.String("url", event.URL),
+				zap.Error(e))
+		}
+
+	case e := <-errorMultiplex(w.errors, w.targetsWatcher.Errors):
+		zap.L().Error("git error",
+			zap.Error(e))
+	}
+	return
+}
+
 // Start runs the watcher loop and blocks until a fatal error occurs
 func (w *GitWatcher) Start() error {
 	zap.L().Debug("git watcher initialising, waiting for first state to be set")
 
 	// wait for the first config event to set the initial state
-	<-w.initialise
+	w.__waitpoint__start_wait_init()
 
 	zap.L().Debug("git watcher initialised", zap.Any("initial_state", w.state))
 
-	f := func() (err error) {
-		select {
-		case newState := <-w.newState:
-			zap.L().Debug("git watcher received new state",
-				zap.Any("new_state", newState))
-
-			return w.doReconfigure(newState)
-
-		case <-w.stateReq:
-			w.stateRes <- w.state
-
-		case event := <-w.targetsWatcher.Events:
-			zap.L().Debug("git watcher received a target event",
-				zap.Any("new_state", event))
-
-			if e := w.handle(event); e != nil {
-				zap.L().Error("failed to handle event",
-					zap.String("url", event.URL),
-					zap.Error(e))
-			}
-
-		case e := <-errorMultiplex(w.errors, w.targetsWatcher.Errors):
-			zap.L().Error("git error",
-				zap.Error(e))
-		}
-		return
-	}
-
 	for {
-		err := f()
+		err := w.__waitpoint__start_select_states()
 		if err != nil {
 			return err
 		}
@@ -203,13 +207,18 @@ func (w *GitWatcher) watchTargets() (err error) {
 	}()
 	zap.L().Debug("created targets watcher, awaiting setup")
 
+	err = w.__waitpoint__watch_targets(errs)
+
+	zap.L().Debug("targets watcher initialised")
+
+	return
+}
+
+func (w *GitWatcher) __waitpoint__watch_targets(errs chan error) (err error) {
 	select {
 	case <-w.targetsWatcher.InitialDone:
 	case err = <-errs:
 	}
-
-	zap.L().Debug("targets watcher initialised")
-
 	return
 }
 
@@ -222,7 +231,7 @@ func (w *GitWatcher) handle(e gitwatch.Event) (err error) {
 		zap.String("target", target.Name),
 		zap.String("url", target.RepoURL),
 		zap.Time("timestamp", e.Timestamp))
-	w.send(target, e.Path, false)
+	w.__waitpoint__send_target_task(target, e.Path, false)
 	return nil
 }
 
@@ -257,7 +266,7 @@ func (w GitWatcher) executeTargets(targets []task.Target, shutdown bool) {
 		zap.Int("targets", len(targets)))
 
 	for _, t := range targets {
-		w.send(t, filepath.Join(w.directory, t.Name), shutdown)
+		w.__waitpoint__send_target_task(t, filepath.Join(w.directory, t.Name), shutdown)
 	}
 }
 
@@ -270,7 +279,7 @@ func (w GitWatcher) getTarget(url string) (target task.Target, exists bool) {
 	return
 }
 
-func (w GitWatcher) send(target task.Target, path string, shutdown bool) {
+func (w GitWatcher) __waitpoint__send_target_task(target task.Target, path string, shutdown bool) {
 	w.bus <- task.ExecutionTask{
 		Target:   target,
 		Path:     path,

@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"runtime"
+	"strings"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -57,7 +59,7 @@ this repository has new commits, Pico will automatically reconfigure.`,
 			Action: func(c *cli.Context) (err error) {
 				if !c.Args().Present() {
 					cli.ShowCommandHelp(c, "run")
-					return errors.New("missing argument: target")
+					return errors.New("missing argument: configuration repository URL")
 				}
 
 				ctx, cancel := context.WithCancel(context.Background())
@@ -72,9 +74,7 @@ this repository has new commits, Pico will automatically reconfigure.`,
 					}
 				}
 
-				zap.L().Debug("initialising service")
-
-				svc, err := service.Initialise(service.Config{
+				cfg := service.Config{
 					Target: task.Repo{
 						URL:  c.Args().First(),
 						User: c.String("git-username"),
@@ -90,7 +90,11 @@ this repository has new commits, Pico will automatically reconfigure.`,
 					VaultPath:       c.String("vault-path"),
 					VaultRenewal:    c.Duration("vault-renew-interval"),
 					VaultConfig:     c.String("vault-config-path"),
-				})
+				}
+
+				zap.L().Debug("initialising service", zap.Any("config", cfg))
+
+				svc, err := service.Initialise(cfg)
 				if err != nil {
 					return errors.Wrap(err, "failed to initialise")
 				}
@@ -111,26 +115,32 @@ this repository has new commits, Pico will automatically reconfigure.`,
 				case err = <-errs:
 				}
 
+				if strings.ToLower(os.Getenv("LOG_LEVEL")) == "debug" {
+					doTrace()
+				}
+
 				return
 			},
 		},
-	}
-
-	if os.Getenv("DEBUG") != "" {
-		go func() {
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, os.Interrupt)
-			buf := make([]byte, 1<<20)
-			for {
-				<-sigs
-				stacklen := runtime.Stack(buf, true)
-				log.Printf("\nPrinting goroutine stack trace because `DEBUG` was set.\n%s\n", buf[:stacklen])
-			}
-		}()
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
 		zap.L().Fatal("exit", zap.Error(err))
 	}
+}
+
+var waitpoints = regexp.MustCompile(`__waitpoint__(.+)\(`)
+
+func doTrace() {
+	buf := make([]byte, 1<<20)
+	stacklen := runtime.Stack(buf, true)
+
+	fmt.Printf("\nPrinting goroutine stack trace because `DEBUG` was set.\n%s\n", buf[:stacklen])
+	fmt.Println("Code that was waiting:")
+
+	for _, s := range waitpoints.FindAllStringSubmatch(string(buf[:stacklen]), 1) {
+		fmt.Printf("  - %s\n", s[1])
+	}
+	fmt.Println("\nSee the docs on https://pico.sh/ for more information.")
 }
