@@ -87,7 +87,7 @@ func (v *VaultSecrets) GetSecretsForTarget(name string) (map[string]string, erro
 	}
 
 	zap.L().Debug("found secrets in vault",
-		zap.Any("secret", secret))
+		zap.Strings("secret", keys(env)))
 
 	return env, nil
 }
@@ -148,6 +148,13 @@ func kvToMap(version int, data map[string]interface{}) (env map[string]string, e
 		}
 	} else {
 		return nil, errors.Errorf("unrecognised KV version: %d", version)
+	}
+	return
+}
+
+func keys(m map[string]string) (k []string) {
+	for x := range m {
+		k = append(k, x)
 	}
 	return
 }
