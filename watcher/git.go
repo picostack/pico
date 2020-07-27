@@ -165,10 +165,7 @@ func (w *GitWatcher) GetState() config.State {
 func (w *GitWatcher) watchTargets() (err error) {
 	targetRepos := make([]gitwatch.Repository, len(w.state.Targets))
 	for i, t := range w.state.Targets {
-		dir := t.Name
-		if t.Branch != "" {
-			dir = fmt.Sprintf("%s_%s", t.Name, t.Branch)
-		}
+		dir := getTargetPath(t)
 		auth, err := w.getAuthForTarget(t)
 		if err != nil {
 			return err
@@ -235,6 +232,13 @@ func (w *GitWatcher) handle(e gitwatch.Event) (err error) {
 	return nil
 }
 
+func getTargetPath(t task.Target) string {
+    if t.Branch != "" {
+        return fmt.Sprintf("%s_%s", t.Name, t.Branch)
+    }
+    return t.Name
+}
+
 func (w GitWatcher) getAuthForTarget(t task.Target) (transport.AuthMethod, error) {
 	for _, a := range w.state.AuthMethods {
 		if a.Name == t.Auth {
@@ -266,7 +270,7 @@ func (w GitWatcher) executeTargets(targets []task.Target, shutdown bool) {
 		zap.Int("targets", len(targets)))
 
 	for _, t := range targets {
-		w.__waitpoint__send_target_task(t, filepath.Join(w.directory, t.Name), shutdown)
+		w.__waitpoint__send_target_task(t, filepath.Join(w.directory, getTargetPath(t)), shutdown)
 	}
 }
 
