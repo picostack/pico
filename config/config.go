@@ -108,6 +108,8 @@ function A(a) {
 	if(a.pass_key === undefined) { throw "auth pass_key undefined"; }
 
 	STATE.auths.push(a);
+
+	return a.name;
 }
 `)
 
