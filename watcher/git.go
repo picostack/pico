@@ -220,7 +220,7 @@ func (w *GitWatcher) __waitpoint__watch_targets(errs chan error) (err error) {
 }
 
 func (w *GitWatcher) handle(e gitwatch.Event) (err error) {
-	target, exists := w.getTarget(e.URL)
+	target, exists := w.getTarget(e.Path)
 	if !exists {
 		return errors.Errorf("attempt to handle event for unknown target %s at %s", e.URL, e.Path)
 	}
@@ -233,10 +233,10 @@ func (w *GitWatcher) handle(e gitwatch.Event) (err error) {
 }
 
 func getTargetPath(t task.Target) string {
-    if t.Branch != "" {
-        return fmt.Sprintf("%s_%s", t.Name, t.Branch)
-    }
-    return t.Name
+	if t.Branch != "" {
+		return fmt.Sprintf("%s_%s", t.Name, t.Branch)
+	}
+	return t.Name
 }
 
 func (w GitWatcher) getAuthForTarget(t task.Target) (transport.AuthMethod, error) {
@@ -274,9 +274,10 @@ func (w GitWatcher) executeTargets(targets []task.Target, shutdown bool) {
 	}
 }
 
-func (w GitWatcher) getTarget(url string) (target task.Target, exists bool) {
+func (w GitWatcher) getTarget(path string) (target task.Target, exists bool) {
 	for _, t := range w.state.Targets {
-		if t.RepoURL == url {
+		targetPath := filepath.Join(w.directory, getTargetPath(t))
+		if targetPath == path {
 			return t, true
 		}
 	}
