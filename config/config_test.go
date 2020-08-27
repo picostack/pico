@@ -42,6 +42,25 @@ func Test_applyFileTargets(t *testing.T) {
 			{Name: "2", RepoURL: "https://github.com/Southclaws/project2", Up: []string{"sleep"}, Env: map[string]string{}},
 			{Name: "3", RepoURL: "https://github.com/Southclaws/project3", Up: []string{"sleep"}, Env: map[string]string{}},
 		}, false},
+		{"auth", `
+		var auther = A({
+			name: "auth",
+			path: "path",
+			user_key: "user_key",
+			pass_key: "pass_key"
+		});
+
+		T({
+			name: "name",
+			url:  "../test.local",
+			up:   ["echo", "hello world"],
+			auth: auther,
+		});
+
+		console.log("done!");
+		`, task.Targets{
+			{Name: "name", RepoURL: "../test.local", Up: []string{"echo", "hello world"}, Env: map[string]string{}, Auth: "auth"},
+		}, false},
 		{"envmap", `
 		var url = "https://github.com/Southclaws/";
 
