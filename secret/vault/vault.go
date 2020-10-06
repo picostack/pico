@@ -102,10 +102,18 @@ func (v *VaultSecrets) Renew(ctx context.Context) error {
 	renew := time.NewTicker(v.renewal)
 	defer renew.Stop()
 	for range renew.C {
-		_, err := v.client.Auth().Token().RenewSelf(0)
+		token, err := v.client.Auth().Token().RenewSelf(0)
 		if err != nil {
 			return errors.Wrap(err, "failed to renew vault token")
 		}
+		if _, err = v.client.Auth().Token().LookupSelf(); err != nil {
+			return errors.Wrap(err, "failed to connect to vault server")
+		}
+		v.client.SetToken(token.Auth.ClientToken)
+		zap.L().Debug("renewed fault token",
+			zap.String("lease_id", token.LeaseID),
+			zap.Int("lease_duration", token.LeaseDuration),
+			zap.Bool("renewable", token.Renewable))
 	}
 	return nil
 }
