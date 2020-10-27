@@ -189,6 +189,7 @@ func (w *GitWatcher) watchTargets() (err error) {
 		w.directory,
 		nil,
 		false)
+	w.targetsWatcher.UseForce = true
 	if err != nil {
 		return errors.Wrap(err, "failed to watch targets")
 	}
