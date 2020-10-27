@@ -109,6 +109,7 @@ func (p *GitProvider) watchConfig() (err error) {
 		p.directory,
 		p.authMethod,
 		false)
+	p.configWatcher.UseForce = true
 	if err != nil {
 		return errors.Wrap(err, "failed to watch config target")
 	}
