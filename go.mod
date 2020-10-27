@@ -3,7 +3,7 @@ module github.com/picostack/pico
 go 1.13
 
 require (
-	github.com/Southclaws/gitwatch v1.4.2
+	github.com/Southclaws/gitwatch v1.5.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/eapache/go-resiliency v1.2.0
 	github.com/frankban/quicktest v1.4.1 // indirect
